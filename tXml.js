@@ -22,7 +22,19 @@ function tXml(S){
 			    		pos++;
 			    	}
 			        return children;
-			    }
+			    }else if(S[pos+1]==='!'){
+					if(S[pos+2]=='-'){
+						//jumpcomment
+						pos+=4;
+						while(!(S[pos]==='>' && S[pos-1]=='-' && S[pos-2]=='-')){pos++}
+					}else{
+						//jump declaration
+						pos+=2;
+						while(S[pos]!=='>'){pos++}
+					}
+					pos++;
+					continue;
+				}
 				var node = parseNode();
 				children.push(node);
 			}else{
@@ -39,23 +51,23 @@ function tXml(S){
 	 */
 	function parseText(){
 		var text=''
+		var start = pos;
 		while(S[pos] && S[pos]!='<'){
-			text+=S[pos];
+			//text+=S[pos];
 			pos++;
 		}
 		pos--;
-		return text;
+		return S.slice(start,pos+1);
 	}
 	/**
 	 *	returns text until the first nonAlphebetic letter
 	 */
 	function parseName(){
-	   var name='';
-	   while('\n\t>/= '.indexOf(S[pos])===-1){
-	       name+=S[pos];
-	       pos++;
-	   }
-	   return name;
+		var start = pos;
+		while('\n\t>/= '.indexOf(S[pos])===-1){
+			pos++;
+		}
+		return S.slice(start,pos);
 	}
 	/**
 	 *	is parsing a node, including tagName, Attributes and its children,
@@ -70,7 +82,9 @@ function tXml(S){
 	    // parsing attributes
 	    var attrFound=false;
 	    while(S[pos] !== '>'){
-	        if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
+			var c = S[pos].charCodeAt(0);
+			if((c>64&&c<91)||(c>96&&c<123)){
+	        //if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
                 var name = parseName();
                 while(S[pos] !== '"' && S[pos] !== "'"){
                     pos++;   
@@ -98,14 +112,13 @@ function tXml(S){
 	 *	is parsing a string, that starts with a char and with the same usually  ' or "
 	 */
 	function parseString(){
-	   var s = '';
-	   var start = S[pos];
+	   var startChar = S[pos];
+	   var startpos=pos+1;
 	   pos++;
-	   while(S[pos]!==start){
-	       s+=S[pos];
+	   while(S[pos]!==startChar){
 	       pos++;
 	   }
-	   return s;
+	   return S.slice(startpos,pos);
 	}
 
 	var pos=0;
