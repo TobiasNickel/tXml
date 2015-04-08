@@ -11,7 +11,11 @@
 function tXml(S){
     "use strict";
     var openBracket="<";
+    var openBracketCC="<".charCodeAt(0);
     var closeBracket=">";
+    var closeBracketCC=">".charCodeAt(0);
+    var minus="-";
+    var minusCC="-".charCodeAt(0);
     
     /**
      * parsing a list of entries
@@ -19,21 +23,21 @@ function tXml(S){
     function parseChildren(){
         var children=[];
         while(S[pos]){
-            if(S[pos]==openBracket){
+            if(S.charCodeAt(pos)==closeBracketCC){
                 if(S[pos+1]==='/'){
                     //while(S[pos]!=='>'){ pos++; }
                     pos = S.indexOf(closeBracket,pos)
                     return children;
                 }else if(S[pos+1]==='!'){
-                    if(S[pos+2]=='-'){
+                    if(S.charCodeAt(pos+2)==minusCC){
                         //jumpcomment
                         //pos+=4;
-                        while(!(S[pos]==='>' && S[pos-1]=='-' && S[pos-2]=='-' &&pos != -1)){pos = S.indexOf(closeBracket, pos+1);}
+                        while(!(S.charCodeAt(pos)===closeBracketCC && S.charCodeAt(pos-1)==minusCC && S.charCodeAt(pos-2)==minusCC &&pos != -1)){pos = S.indexOf(closeBracket, pos+1);}
                         if(pos===-1) pos=S.length
                     }else{
                         //jump declaration
                         pos+=2;
-                        while(S[pos]!=='>'){ pos++; }
+                        while(S[pos]!==closeBracket){ pos++; }
                     }
                     pos++;
                     continue;
@@ -54,7 +58,7 @@ function tXml(S){
      */
     function parseText(){
         var start = pos;
-        pos = S.indexOf(openBracket,pos)-1;
+        pos = S.indexOf(openBracket,pos);
         if(pos<0)pos=S.length-1;
         return S.slice(start,pos+1);
     }
@@ -74,14 +78,14 @@ function tXml(S){
      var NoChildNodes=['img','br','input'];
     function parseNode(){
         var node = {};
-        if(S[pos]!=='<') throw '';//this method starts parsing with the "<"
+        if(S.charCodeAt(pos)!==openBracketCC) throw '';//this method starts parsing with the "<"
         pos++;
         node.tagName = parseName();
 
         // parsing attributes
         var attrFound=false;
-       	while(S[pos] !== '>'){
-            var c = S[pos].charCodeAt(0);
+       	while(S[pos] !== closeBracket){
+            var c = S.charCodeAt(pos);
             if((c>64&&c<91)||(c>96&&c<123)){
             //if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
                 var name = parseName();
@@ -116,7 +120,6 @@ function tXml(S){
 		    }
 		}
         return node;
-
     }
     /**
      *    is parsing a string, that starts with a char and with the same usually  ' or "
@@ -124,13 +127,12 @@ function tXml(S){
     function parseString(){
        var startChar = S[pos];
        var startpos= ++pos;
-       //while(S[pos]!==startChar){ pos++; }
        pos = S.indexOf(startChar,startpos)
        return S.slice(startpos,pos);
     }
 
     var pos=0;
-    return parseChildren('');
+    return parseChildren();
 }
 /* //some testCode
 console.clear();
@@ -140,7 +142,8 @@ var o = tXml(s);
 var end = new Date().getTime();
 //console.log(JSON.stringify(o,undefined,'\t'));
 console.log("MILLISECONDS",end-start);
-console.log('node count',document.querySelectorAll('*').length);
-
+var nodeCount=document.querySelectorAll('*').length;
+console.log('node count',nodeCount);
+console.log("speed:",(1000/(end-start))*nodeCount,'Nodes / second')
 //console.log(JSON.stringify(tXml('<html><head><title>testPage</title></head><body><h1>TestPage</h1><p>this is a <b>test</b>page</p></body></html>'),undefined,'\t'));
 // */
