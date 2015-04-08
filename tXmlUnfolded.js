@@ -49,10 +49,63 @@ function tXml(S){
                     pos++;
                     continue;
                 }
-                var node = parseNode();
-                children.push(node);
+				var node = {};
+				pos++;
+				var startNamePos = pos;
+				while(nameSpacer.indexOf(S[pos])===-1){ pos++; }
+				var node_tagName = S.slice(startNamePos,pos);
+
+				// parsing attributes
+				var attrFound=false;
+				while(S.charCodeAt(pos) !== closeBracketCC){
+					var c = S.charCodeAt(pos);
+					if((c>64&&c<91)||(c>96&&c<123)){
+					//if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
+					
+						startNamePos = pos;
+						while(nameSpacer.indexOf(S[pos])===-1){ pos++; }
+						var name = S.slice(startNamePos,pos);
+						// search beginning of the string
+						var code=S.charCodeAt(pos);
+						while(code !== singleQuoteCC && code !== doubleQuoteCC){ pos++;code=S.charCodeAt(pos) }
+						
+						
+						var startChar = S[pos];
+						var startStringPos= ++pos;
+						pos = S.indexOf(startChar,startStringPos);
+						var value = S.slice(startStringPos,pos);
+						if(!attrFound){
+							var node_attributes = {};
+							attrFound=true;
+						}
+						node_attributes[name] = value;
+					}
+					pos++;
+
+				}
+				// optional parsing of children
+				if(S.charCodeAt(pos-1) !== slashCC){ 
+					if(node.tagName == "script"){
+						var start=pos;
+						pos=S.indexOf('</script>',pos);
+						node.children=[S.slice(start,pos-1)];
+						pos+=8;
+					}else if(node_tagName == "style"){
+						var start=pos;
+						pos=S.indexOf('</style>',pos);
+						node.children=[S.slice(start,pos-1)];
+						pos+=7;
+					}else if(!NoChildNodes[node.tagName]){
+						pos++;
+						var node_children = parseChildren(name);
+					}
+				}
+                children.push({children:node_children,tagName:node_tagName,attributes:node_attributes});
             }else{
-                var text = parseText()
+				var startTextPos = pos;
+				pos = S.indexOf(openBracket,pos)-1;
+				if(pos===-2)pos=S.length;
+                var text = S.slice(startTextPos,pos+1);
                 if(text.trim().length>0)
                     children.push(text);
             }
@@ -61,88 +114,23 @@ function tXml(S){
         return children;
     }
     /**
-     *    returns the text outside of texts until the first '<'
-     */
-    function parseText(){
-        var start = pos;
-        pos = S.indexOf(openBracket,pos)-1;
-        if(pos===-2)pos=S.length;
-        return S.slice(start,pos+1);
-    }
-    /**
      *    returns text until the first nonAlphebetic letter
      */
     var nameSpacer = '\n\t>/= ';
-    function parseName(){
-        var start = pos;
-        while(nameSpacer.indexOf(S[pos])===-1){ pos++; }
-        return S.slice(start,pos);
-    }
     /**
      *    is parsing a node, including tagName, Attributes and its children,
      * to parse children it uses the parseChildren again, that makes the parsing recursive
      */
-     var NoChildNodes=['img','br','input'];
-    function parseNode(){
-        var node = {};
-        pos++;
-        node.tagName = parseName();
-
-        // parsing attributes
-        var attrFound=false;
-       	while(S.charCodeAt(pos) !== closeBracketCC){
-            var c = S.charCodeAt(pos);
-            if((c>64&&c<91)||(c>96&&c<123)){
-            //if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
-                var name = parseName();
-                // search beginning of the string
-				var code=S.charCodeAt(pos);
-                while(code !== singleQuoteCC && code !== doubleQuoteCC){ pos++;code=S.charCodeAt(pos) }
-                
-                var value = parseString();
-                if(!attrFound){
-                    node.attributes = {};
-                    attrFound=true;
-                }
-                node.attributes[name] = value;
-            }
-            pos++;
-
-        }
-        // optional parsing of children
-        if(S.charCodeAt(pos-1) !== slashCC){ 
-		    if(node.tagName == "script"){
-		        var start=pos;
-		    	pos=S.indexOf('</script>',pos);
-		    	node.children=[S.slice(start,pos-1)];
-		    	pos+=8;
-		    }else if(node.tagName == "style"){
-		        var start=pos;
-		    	pos=S.indexOf('</style>',pos);
-		    	node.children=[S.slice(start,pos-1)];
-		    	pos+=7;
-		    }else if(NoChildNodes.indexOf(node.tagName)==-1){
-		        pos++;
-		        node.children = parseChildren(name);
-		    }
-		}
-        return node;
-    }
-    /**
-     *    is parsing a string, that starts with a char and with the same usually  ' or "
-     */
-    function parseString(){
-       var startChar = S[pos];
-       var startpos= ++pos;
-       pos = S.indexOf(startChar,startpos)
-       return S.slice(startpos,pos);
-    }
-
-    var pos=0;
+    var NoChildNodes={};['img','br','input'];
+	NoChildNodes.img=true;
+	NoChildNodes.br=true;
+	NoChildNodes.input=true;
+    
+	var pos=0;
     return parseChildren();
 }
 
-/* //some testCode
+ //some testCode
 console.clear();
 var s = document.body.innerHTML.toLowerCase();
 var start = new Date().getTime();
