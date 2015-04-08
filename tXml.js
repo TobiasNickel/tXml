@@ -15,7 +15,8 @@ function tXml(S){
     var closeBracket=">";
     var closeBracketCC=">".charCodeAt(0);
     var minus="-";
-    var minusCC="-".charCodeAt(0);
+    var slash="/";
+    var slashCC="/".charCodeAt(0);
     
     /**
      * parsing a list of entries
@@ -24,7 +25,7 @@ function tXml(S){
         var children=[];
         while(S[pos]){
             if(S.charCodeAt(pos)==closeBracketCC){
-                if(S[pos+1]==='/'){
+                if(S.charCodeAt(pos+1) === slashCC){
                     //while(S[pos]!=='>'){ pos++; }
                     pos = S.indexOf(closeBracket,pos)
                     return children;
@@ -84,7 +85,7 @@ function tXml(S){
 
         // parsing attributes
         var attrFound=false;
-       	while(S[pos] !== closeBracket){
+       	while(S.charCodeAt(pos) !== closeBracketCC){
             var c = S.charCodeAt(pos);
             if((c>64&&c<91)||(c>96&&c<123)){
             //if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
@@ -103,7 +104,7 @@ function tXml(S){
 
         }
         // optional parsing of children
-        if(S[pos-1]!=='/'){ 
+        if(S.charCodeAt(pos-1) !== slashCC){ 
 		    if(node.tagName == "script"){
 		        var start=pos;
 		    	pos=S.indexOf('</script>',pos);
