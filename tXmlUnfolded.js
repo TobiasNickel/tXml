@@ -7,7 +7,7 @@
 /**
  * parseXML / html into a DOM Object. with no validation and some failur tolerance
  * @params S {string} your XML to parse
- */
+ */ 
 function tXml(S){
     "use strict";
     var openBracket = "<";

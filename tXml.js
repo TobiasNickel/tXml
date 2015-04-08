@@ -143,7 +143,7 @@ function tXml(S){
 }
 
 /* //some testCode
-console.clear();
+console.clear(); 
 var s = document.body.innerHTML.toLowerCase();
 var start = new Date().getTime();
 var o = tXml(s);
