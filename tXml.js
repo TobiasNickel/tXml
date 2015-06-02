@@ -93,7 +93,6 @@ function tXml(S) {
      * to parse children it uses the parseChildren again, that makes the parsing recursive
      */
     var NoChildNodes = ['img', 'br', 'input', 'meta', 'link'];
-
     function parseNode() {
         var node = {};
         pos++;

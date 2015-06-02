@@ -9,3 +9,8 @@ This lib only provides one single method. The tXml() takes a string as input and
 4. this code is parsing at avarage the same speed as native DOMParser
 
 so, there are good reasons to give tXml.js a try. 
+
+
+###Developer
+Tobias Nickel  
+![alt text](https://avatars1.githubusercontent.com/u/4189801?s=150) 
