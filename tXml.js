@@ -129,12 +129,12 @@ function tXml(S) {
         // optional parsing of children
         if (S.charCodeAt(pos - 1) !== slashCC) {
             if (node.tagName == "script") {
-                var start = pos;
+                var start = pos+1;
                 pos = S.indexOf('</script>', pos);
                 node.children = [S.slice(start, pos - 1)];
                 pos += 8;
             } else if (node.tagName == "style") {
-                var start = pos;
+                var start = pos+1;
                 pos = S.indexOf('</style>', pos);
                 node.children = [S.slice(start, pos - 1)];
                 pos += 7;
