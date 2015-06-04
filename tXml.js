@@ -9,7 +9,7 @@
  * @params S {string} your XML to parse
  */
  
-function tXml(S) {
+function tXml(S,searchId) {
     "use strict";
     var openBracket = "<";
     var openBracketCC = "<".charCodeAt(0);
@@ -155,16 +155,31 @@ function tXml(S) {
         pos = S.indexOf(startChar, startpos)
         return S.slice(startpos, pos);
     }
-
-    var pos = 0;
-    return parseChildren();
+    function findId(){
+        return new RegExp('\s*id\s*=\s*[\'"]'+searchId+'[\'"]').exec(S).index;
+    }
+    
+    if(searchId){
+        var pos = findId();
+        if(pos!== -1 ){
+            pos = S.lastIndexOf('<',pos);
+            if(pos!==-1){
+                return parseNode();
+            }
+        }
+        return pos;
+    } else {
+        var pos = 0;
+        return parseChildren();
+    }
 }
-
-/* //some testCode
+/*
 console.clear();
+tXml(d,'content');
+ //some testCode
 var s = document.body.innerHTML.toLowerCase();
 var start = new Date().getTime();
-var o = tXml(s);
+var o = tXml(s,'content');
 var end = new Date().getTime();
 //console.log(JSON.stringify(o,undefined,'\t'));
 console.log("MILLISECONDS",end-start);
@@ -175,7 +190,7 @@ console.log("speed:",(1000/(end-start))*nodeCount,'Nodes / second')
 var p = new DOMParser();
 var s2='<body>'+s+'</body>'
 var start2= new Date().getTime();
-var o2 = p.parseFromString(s2,'text/html')
+var o2 = p.parseFromString(s2,'text/html').querySelector('#content')
 var end2=new Date().getTime();
 console.log("MILLISECONDS",end2-start2);
 // */
