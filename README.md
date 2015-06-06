@@ -18,7 +18,18 @@ so, there are good reasons to give tXml.js a try.
 **tXml** *(XML-string, ID-string(optional))*
   1. **XML string** is the XML to parse.
   2. **ID-String** is optional an ID of some object. that can be queried. Using this is incredable fast.
-  
+
+##XML - features
+  1. tags
+  2. childTags
+  3. textnodes
+  4. whitespaces
+  5. attribures with single and double quotes
+  6. attributes without value
+  7. xmlComments (ignored)
+  8. embedded CSS and Javascript
+  9. HTML singleTag elements br, img, link, meta, hr
+
 ###Developer
 Tobias Nickel  
 ![alt text](https://avatars1.githubusercontent.com/u/4189801?s=150) 
