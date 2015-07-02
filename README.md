@@ -31,5 +31,5 @@ so, there are good reasons to give tXml.js a try.
   9. HTML singleTag elements br, img, link, meta, hr
 
 ###Developer
-Tobias Nickel  
+[Tobias Nickel](http://tnickel.de/)  
 ![alt text](https://avatars1.githubusercontent.com/u/4189801?s=150) 
