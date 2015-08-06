@@ -1,0 +1,28 @@
+{
+  "name": "txml",
+  "version": "1.0.3",
+  "description": "XML DOM Parser for node/browser/worker",
+  "main": "tXml.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TobiasNickel/tXml.git"
+  },
+  "keywords": [
+    "xml",
+    "parser",
+    "dom",
+    "document",
+    "small",
+    "fast",
+    "simple"
+  ],
+  "author": "Tobias Nickel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TobiasNickel/tXml/issues"
+  },
+  "homepage": "https://github.com/TobiasNickel/tXml#readme"
+}
