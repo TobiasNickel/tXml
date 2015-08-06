@@ -14,7 +14,7 @@ This lib only provides one single method. **tXml()**
 
 so, there are good reasons to give tXml.js a try. 
 
-###XML - features
+### XML - features
   1. tags
   2. childTags
   3. text-nodes
@@ -32,10 +32,11 @@ In node, run **"npm install txml"** in your project. if necessary with **--save*
 and then in your script you require it by "var tXml = require('txml');"
 
 
-###Methods
+### Methods
 **tXml** *(XML-string, options)*
-  1. **XML string** is the XML to parse.
-  2. **options** is optional 
+
+	1. **XML string** is the XML to parse.
+	2. **options** is optional 
 		options are: **searchId** an ID of some object. that can be queried. Using this is incredible fast. 
 		**filter** a method, to filter for interesting nodes, use it like Array.filter.
 		**simplify** to simplify the object, to an easier
@@ -95,12 +96,14 @@ and then in your script you require it by "var tXml = require('txml');"
 	}
 
 **tXml.simpify** *(tXml_DOM_Object)* this methid is used with the simplify parameter;
+
   1. **tXml_DOM_Object** the object to simplify.
 
 **tXml.filter** *(tXml_DOM_Object, f)* this methid is used with the filter parameter, it is used like Array.filter.
+
   1. **tXml_DOM_Object** the object to filter.
   2. **f** a function that returns true if you want this elements in the result set.
 
-###Developer
+### Developer
 [Tobias Nickel](http://tnickel.de/)  
 ![alt text](https://avatars1.githubusercontent.com/u/4189801?s=150) 
