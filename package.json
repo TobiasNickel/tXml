@@ -1,10 +1,10 @@
 {
   "name": "txml",
-  "version": "1.0.4",
-  "description": "XML DOM Parser for node/browser/worker",
+  "version": "1.0.17",
+  "description": "fastest XML DOM Parser for node/browser/worker",
   "main": "tXml.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test.js"
   },
   "repository": {
     "type": "git",
