@@ -19,7 +19,7 @@ so, there are good reasons to give tXml.js a try.
 
 ## XML - features
   1. tags
-  2. childTags
+  2. childTagsttttt
   3. text-nodes
   4. white-spaces
   5. attributes with single and double quotes
