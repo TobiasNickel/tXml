@@ -1,6 +1,6 @@
 {
   "name": "txml",
-  "version": "1.0.17",
+  "version": "2.0.17",
   "description": "fastest XML DOM Parser for node/browser/worker",
   "main": "tXml.js",
   "scripts": {

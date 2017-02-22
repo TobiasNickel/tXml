@@ -33,6 +33,8 @@ so, there are good reasons to give tXml.js a try.
   13. getElementsById/-Class direct on the xmlString 
   14. simplefy, similar to PHP's [SimpleXML](http://php.net/manual/en/book.simplexml.php)
   15. filter, similar to underscore, as a alternative to CSS selectors
+  
+  16. streamSupport ! ! !
 
 ## Installation
 In browser you load it how ever you want. For example as tag: <script src="tXml.js"></script>.
@@ -109,6 +111,16 @@ find the elements with the given class, without parsing the entire xml into a tD
 1. **xml** the xml string to search in.
 2. **className** the className of the element to find
 
+
+### **txml.parseStream** (stream, offset)
+1. stream is the stream or fileName, 
+2. offset requires you to set short before the first item.
+		usually files begin with simething like "<!DOCTYPE osm><osm>"
+		so the offset need to be before the first item starts so that 
+		between that item and the offset is no "<" character.
+		alternatively, pass astring, containing this preample.
+return stream, triggers even "xml" to get notified when a complete node has been parsed.
+is usefull for huge files, OSM-world, wikipedia-dump.
 
 
 
