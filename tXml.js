@@ -10,18 +10,26 @@
  */
 
 /**
+ * @typedef tNode 
+ * @property {string} tagName 
+ * @property {object} [attributes] 
+ * @property {tNode|string|number[]} children 
+ **/
+
+/**
  * parseXML / html into a DOM Object. with no validation and some failur tolerance
- * @params S {string} your XML to parse
+ * @param {string} S your XML to parse
  * @param options {object} all other options:
  * searchId {string} the id of a single element, that should be returned. using this will increase the speed rapidly
  * filter {function} filter method, as you know it from Array.filter. but is goes throw the DOM.
  * simplify {bool} to use tXml.simplify.
+ * @return {tNode[]}
  */
 function tXml(S, options) {
     "use strict";
     options = options || {};
 
-    var pos = options.pos||0;
+    var pos = options.pos || 0;
 
     var openBracket = "<";
     var openBracketCC = "<".charCodeAt(0);
@@ -47,6 +55,7 @@ function tXml(S, options) {
             if (S.charCodeAt(pos) == openBracketCC) {
                 if (S.charCodeAt(pos + 1) === slashCC) {
                     pos = S.indexOf(closeBracket, pos);
+                    if (pos + 1) pos += 1
                     return children;
                 } else if (S.charCodeAt(pos + 1) === exclamationCC) {
                     if (S.charCodeAt(pos + 2) == minusCC) {
@@ -54,7 +63,7 @@ function tXml(S, options) {
                         while (pos !== -1 && !(S.charCodeAt(pos) === closeBracketCC && S.charCodeAt(pos - 1) == minusCC && S.charCodeAt(pos - 2) == minusCC && pos != -1)) {
                             pos = S.indexOf(closeBracket, pos + 1);
                         }
-                        if (pos === -1){
+                        if (pos === -1) {
                             pos = S.length
                         }
                     } else {
@@ -113,14 +122,14 @@ function tXml(S, options) {
         node.tagName = parseName();
         // parsing attributes
         var attrFound = false;
-        while (S.charCodeAt(pos) !== closeBracketCC &&  S[pos]) {
+        while (S.charCodeAt(pos) !== closeBracketCC && S[pos]) {
             var c = S.charCodeAt(pos);
             if ((c > 64 && c < 91) || (c > 96 && c < 123)) {
                 //if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
                 var name = parseName();
                 // search beginning of the string
                 var code = S.charCodeAt(pos);
-                while (code&&code !== singleQuoteCC && code !== doubleQuoteCC && !((code > 64 && code < 91) || (code > 96 && code < 123)) && code !== closeBracketCC) {
+                while (code && code !== singleQuoteCC && code !== doubleQuoteCC && !((code > 64 && code < 91) || (code > 96 && code < 123)) && code !== closeBracketCC) {
                     pos++;
                     code = S.charCodeAt(pos);
                 }
@@ -130,7 +139,7 @@ function tXml(S, options) {
                 }
                 if (code === singleQuoteCC || code === doubleQuoteCC) {
                     var value = parseString();
-                    if(pos===-1){
+                    if (pos === -1) {
                         return node;
                     }
                 } else {
@@ -146,7 +155,7 @@ function tXml(S, options) {
         if (S.charCodeAt(pos - 1) !== slashCC) {
             if (node.tagName == "script") {
                 var start = pos + 1;
-                pos = S.indexOf('</script>', pos);
+                pos = S.indexOf('</' + 'script>', pos);
                 node.children = [S.slice(start, pos - 1)];
                 pos += 8;
             } else if (node.tagName == "style") {
@@ -158,6 +167,8 @@ function tXml(S, options) {
                 pos++;
                 node.children = parseChildren(name);
             }
+        } else {
+            pos++;
         }
         return node;
     }
@@ -199,9 +210,9 @@ function tXml(S, options) {
             S = S.substr(pos);
             pos = 0;
         }
-    } else if(options.parseNode){
+    } else if (options.parseNode) {
         out = parseNode()
-    }else {
+    } else {
         out = parseChildren();
     }
 
@@ -215,13 +226,14 @@ function tXml(S, options) {
     out.pos = pos;
     return out;
 }
+
 /**
  * transform the DomObject to an object that is like the object of PHPs simplexmp_load_*() methods.
  * this format helps you to write that is more likely to keep your programm working, even if there a small changes in the XML schema.
  * be aware, that it is not possible to reproduce the original xml from a simplified version, because the order of elements is not saved.
  * therefore your programm will be more flexible and easyer to read.
  *
- * @param {array} the childrenList
+ * @param {tNode[]} children the childrenList
  */
 tXml.simplify = function simplify(children) {
     var out = {};
@@ -234,16 +246,16 @@ tXml.simplify = function simplify(children) {
     }
     // map each object
     children.forEach(function(child) {
-		if (typeof child !== 'object') {
-			return;
-		}
+        if (typeof child !== 'object') {
+            return;
+        }
         if (!out[child.tagName])
             out[child.tagName] = [];
-		var kids = tXml.simplify(child.children);
-		out[child.tagName].push(kids);
-		if (child.attributes) {
-			kids._attributes = child.attributes;
-		}
+        var kids = tXml.simplify(child.children);
+        out[child.tagName].push(kids);
+        if (child.attributes) {
+            kids._attributes = child.attributes;
+        }
     });
 
     for (var i in out) {
@@ -277,7 +289,7 @@ tXml.filter = function(children, f) {
  * this is useful,
  *  1. to remove whitespaces
  * 2. to recreate xml data, with some changed data.
- * @param O{tXMLDomObject} the object to Stringify
+ * @param {tNode} O the object to Stringify
  */
 tXml.stringify = function TOMObjToXML(O) {
     var out = '';
@@ -296,9 +308,9 @@ tXml.stringify = function TOMObjToXML(O) {
     function writeNode(N) {
         out += "<" + N.tagName;
         for (var i in N.attributes) {
-			if(N.attributes[i] === null){
-				out += ' ' + i;
-			}else if (N.attributes[i].indexOf('"') === -1) {
+            if (N.attributes[i] === null) {
+                out += ' ' + i;
+            } else if (N.attributes[i].indexOf('"') === -1) {
                 out += ' ' + i + '="' + N.attributes[i].trim() + '"';
             } else {
                 out += ' ' + i + "='" + N.attributes[i].trim() + "'";
@@ -318,6 +330,7 @@ tXml.stringify = function TOMObjToXML(O) {
  * use this method to read the textcontent, of some node.
  * It is great if you have mixed content like:
  * this text has some <b>big</b> text and a <a href=''>link</a>
+ * @return {string}
  */
 tXml.toContentString = function(tDom) {
     if (Array.isArray(tDom)) {
@@ -354,47 +367,47 @@ tXml.getElementsByClassName = function(S, classname, simplified) {
     });
 };
 
-tXml.parseStream = function(stream,offset){
-    if(typeof offset === 'function'){
+tXml.parseStream = function(stream, offset) {
+    if (typeof offset === 'function') {
         cb = offset;
         offset = 0;
     }
-    if(typeof offset === 'string'){
-        offset = offset.length+2;
+    if (typeof offset === 'string') {
+        offset = offset.length + 2;
     }
-    if(typeof stream === 'string'){
+    if (typeof stream === 'string') {
         var fs = require('fs');
-        stream = fs.createReadStream(stream, {start:offset});
+        stream = fs.createReadStream(stream, { start: offset });
         offset = 0;
     }
 
     var position = offset;
     var data = '';
-    var cc=0
-    stream.on('data',function(chunk){
+    var cc = 0
+    stream.on('data', function(chunk) {
         cc++;
         data += chunk;
         var lastpos = 0;
-        do{
-            position = data.indexOf('<',position)+1
-            var res = tXml(data,{pos:position,parseNode:true});
+        do {
+            position = data.indexOf('<', position) + 1
+            var res = tXml(data, { pos: position, parseNode: true });
             position = res.pos;
-            if(position>(data.length-1) || position<lastpos){
-                if(lastpos){
+            if (position > (data.length - 1) || position < lastpos) {
+                if (lastpos) {
                     data = data.slice(lastpos);
-                    position=0
+                    position = 0
                     lastpos = 0;
                 }
                 return;
-            }else{
+            } else {
                 stream.emit('xml', res);
                 lastpos = position;
             }
-        }while(1)
+        } while (1)
         data = data.slice(position);
-        position=0;
+        position = 0;
     });
-    stream.on('end',function(){
+    stream.on('end', function() {
         console.log('end')
     });
     return stream;
