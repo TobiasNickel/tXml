@@ -1,28 +1,28 @@
 {
-  "name": "txml",
-  "version": "2.0.17",
-  "description": "fastest XML DOM Parser for node/browser/worker",
-  "main": "tXml.js",
-  "scripts": {
-    "test": "node test.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/TobiasNickel/tXml.git"
-  },
-  "keywords": [
-    "xml",
-    "parser",
-    "dom",
-    "document",
-    "small",
-    "fast",
-    "simple"
-  ],
-  "author": "Tobias Nickel",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/TobiasNickel/tXml/issues"
-  },
-  "homepage": "https://github.com/TobiasNickel/tXml#readme"
+    "name": "txml",
+    "version": "2.0.19",
+    "description": "fastest XML DOM Parser for node/browser/worker",
+    "main": "tXml.js",
+    "scripts": {
+        "test": "node test.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/TobiasNickel/tXml.git"
+    },
+    "keywords": [
+        "xml",
+        "parser",
+        "dom",
+        "document",
+        "small",
+        "fast",
+        "simple"
+    ],
+    "author": "Tobias Nickel",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/TobiasNickel/tXml/issues"
+    },
+    "homepage": "https://github.com/TobiasNickel/tXml#readme"
 }

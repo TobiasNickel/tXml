@@ -37,7 +37,7 @@ so, there are good reasons to give tXml.js a try.
   16. streamSupport ! ! !
 
 ## Try Online
-you can to some test without installing online: (http://tnickel.de/2017/04/02/txml-online/)[tnickel.de]
+you can to some test without installing online: [tnickel.de](http://tnickel.de/2017/04/02/txml-online/)
 
 ## Installation
 In browser you load it how ever you want. For example as tag: <script src="tXml.js"></script>.
