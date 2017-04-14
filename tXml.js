@@ -251,7 +251,7 @@ tXml.simplify = function simplify(children) {
         }
         if (!out[child.tagName])
             out[child.tagName] = [];
-        var kids = tXml.simplify(child.children);
+        var kids = tXml.simplify(child.children||[]);
         out[child.tagName].push(kids);
         if (child.attributes) {
             kids._attributes = child.attributes;
