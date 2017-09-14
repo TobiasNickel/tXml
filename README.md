@@ -1,5 +1,5 @@
 # tXml
-a very small xml parser in pure javascript
+a very small and propably the fastest xml parser in pure javascript.
 
 This lib only provides one single method. **tXml()**
 
@@ -50,50 +50,51 @@ and then in your script you require it by "var tXml = require('txml');
 ### **tXml** *(XML-string, options)*
 1. **XML string** is the XML to parse.
 2. **options** is optional 
-		**searchId** an ID of some object. that can be queried. Using this is incredible fast. 
-		**filter** a method, to filter for interesting nodes, use it like Array.filter.
-		**simplify** to simplify the object, to an easier access
-		
-	
-	EXAMPLE 1: tXml("<user is='great'><name>Tobias</name><familyName>Nickel</familyName><profession>Software Developer</profession><location>Shanghai / China</location></user>");
+        **searchId** an ID of some object. that can be queried. Using this is incredible fast. 
+        **filter** a method, to filter for interesting nodes, use it like Array.filter.
+        **simplify** to simplify the object, to an easier access
+        
+    
+    EXAMPLE 1: tXml("<user is='great'><name>Tobias</name><familyName>Nickel</familyName><profession>Software Developer</profession><location>Shanghai / China</location></user>");
+```js
+    // will return an object like: 
+    [{
+        "tagName": "user",
+        "attributes": {
+            "is": "great"
+        },
+        "children": [{
+                "tagName": "name",
+                "children": [ "Tobias" ]
+            }, {
+                "tagName": "familyName",
+                "children": [ "Nickel" ]
+            }, {
+                "tagName": "profession",
+                "children": [ "Software Developer" ]
+            }, {
+                "tagName": "location",
+                "children": [ "Shanghai / China" ]
+            }
+        ]
+    }]    
+```   
+    EXAMLPLE 2: tXml("<user is='great'><name>Tobias</name><familyName>Nickel</familyName><profession>Software Developer</profession><location>Shanghai / China</location></user>",{simplify:1});
 
-	// will return an object like: 
-	[{
-		"tagName": "user",
-		"attributes": {
-			"is": "great"
-		},
-		"children": [{
-				"tagName": "name",
-				"children": [ "Tobias" ]
-			}, {
-				"tagName": "familyName",
-				"children": [ "Nickel" ]
-			}, {
-				"tagName": "profession",
-				"children": [ "Software Developer" ]
-			}, {
-				"tagName": "location",
-				"children": [ "Shanghai / China" ]
-			}
-		]
-	}]	
-		
-		
-	EXAMLPLE 2: tXml("<user is='great'><name>Tobias</name><familyName>Nickel</familyName><profession>Software Developer</profession><location>Shanghai / China</location></user>",{simplify:1});
-	// will return an object like: 
-	{
-		"user": {
-			"name": "Tobias",
-			"familyName": "Nickel",
-			"profession": "Software Developer",
-			"location": "Shanghai / China",
-			"_attributes": {
-				"is": "great"
-			}
-		}
-	}
-
+```js
+    // will return an object like: 
+    {
+        "user": {
+            "name": "Tobias",
+            "familyName": "Nickel",
+            "profession": "Software Developer",
+            "location": "Shanghai / China",
+            "_attributes": {
+                "is": "great"
+            }
+        }
+    }
+```
 ### **tXml.simpify** *(tXml_DOM_Object)* 
 this methid is used with the simplify parameter;
 1. **tXml_DOM_Object** the object to simplify.
@@ -118,10 +119,10 @@ find the elements with the given class, without parsing the entire xml into a tD
 ### **txml.parseStream** (stream, offset)
 1. stream is the stream or fileName, 
 2. offset requires you to set short before the first item.
-		usually files begin with simething like "<!DOCTYPE osm><osm>"
-		so the offset need to be before the first item starts so that 
-		between that item and the offset is no "<" character.
-		alternatively, pass astring, containing this preample.
+        usually files begin with simething like "<!DOCTYPE osm><osm>"
+        so the offset need to be before the first item starts so that 
+        between that item and the offset is no "<" character.
+        alternatively, pass astring, containing this preample.
 return stream, triggers even "xml" to get notified when a complete node has been parsed.
 is usefull for huge files, OSM-world, wikipedia-dump.
 
