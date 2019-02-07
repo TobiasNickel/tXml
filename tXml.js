@@ -403,9 +403,7 @@ tXml.parseStream = function(stream, offset) {
                 stream.emit('xml', res);
                 lastpos = position;
             }
-        } while (1)
-        data = data.slice(position);
-        position = 0;
+        } while (1);
     });
     stream.on('end', function() {
         console.log('end')
