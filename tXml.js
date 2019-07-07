@@ -157,12 +157,12 @@ function tXml(S, options) {
                 var start = pos + 1;
                 pos = S.indexOf('</' + 'script>', pos);
                 node.children = [S.slice(start, pos - 1)];
-                pos += 8;
+                pos += 9;
             } else if (node.tagName == "style") {
                 var start = pos + 1;
                 pos = S.indexOf('</style>', pos);
                 node.children = [S.slice(start, pos - 1)];
-                pos += 7;
+                pos += 8;
             } else if (NoChildNodes.indexOf(node.tagName) == -1) {
                 pos++;
                 node.children = parseChildren(name);
@@ -223,7 +223,11 @@ function tXml(S, options) {
     if (options.simplify) {
         out = tXml.simplify(out);
     }
-    out.pos = pos;
+
+    if (options.setPos) {
+        out.pos = pos;
+    }
+
     return out;
 }
 
@@ -390,7 +394,7 @@ tXml.parseStream = function(stream, offset) {
         var lastpos = 0;
         do {
             position = data.indexOf('<', position) + 1
-            var res = tXml(data, { pos: position, parseNode: true });
+            var res = tXml(data, { pos: position, parseNode: true, setPos: true });
             position = res.pos;
             if (position > (data.length - 1) || position < lastpos) {
                 if (lastpos) {
