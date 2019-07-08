@@ -22,7 +22,7 @@
  * @param options {object} all other options:
  * searchId {string} the id of a single element, that should be returned. using this will increase the speed rapidly
  * filter {function} filter method, as you know it from Array.filter. but is goes throw the DOM.
- * simplify {bool} to use tXml.simplify.
+
  * @return {tNode[]}
  */
 function tXml(S, options) {
@@ -117,11 +117,12 @@ function tXml(S, options) {
     var NoChildNodes = ['img', 'br', 'input', 'meta', 'link'];
 
     function parseNode() {
-        var node = {};
         pos++;
-        node.tagName = parseName();
+        const tagName = parseName();
+        const attributes = {};
+        let children = [];
+
         // parsing attributes
-        var attrFound = false;
         while (S.charCodeAt(pos) !== closeBracketCC && S[pos]) {
             var c = S.charCodeAt(pos);
             if ((c > 64 && c < 91) || (c > 96 && c < 123)) {
@@ -133,44 +134,47 @@ function tXml(S, options) {
                     pos++;
                     code = S.charCodeAt(pos);
                 }
-                if (!attrFound) {
-                    node.attributes = {};
-                    attrFound = true;
-                }
                 if (code === singleQuoteCC || code === doubleQuoteCC) {
                     var value = parseString();
                     if (pos === -1) {
-                        return node;
+                        return {
+                            tagName,
+                            attributes,
+                            children,
+                        };
                     }
                 } else {
                     value = null;
                     pos--;
                 }
-                node.attributes[name] = value;
+                attributes[name] = value;
             }
             pos++;
-
         }
         // optional parsing of children
         if (S.charCodeAt(pos - 1) !== slashCC) {
-            if (node.tagName == "script") {
+            if (tagName == "script") {
                 var start = pos + 1;
-                pos = S.indexOf('</' + 'script>', pos);
-                node.children = [S.slice(start, pos - 1)];
+                pos = S.indexOf('</script>', pos);
+                children = [S.slice(start, pos - 1)];
                 pos += 9;
-            } else if (node.tagName == "style") {
+            } else if (tagName == "style") {
                 var start = pos + 1;
                 pos = S.indexOf('</style>', pos);
-                node.children = [S.slice(start, pos - 1)];
+                children = [S.slice(start, pos - 1)];
                 pos += 8;
-            } else if (NoChildNodes.indexOf(node.tagName) == -1) {
+            } else if (NoChildNodes.indexOf(tagName) == -1) {
                 pos++;
-                node.children = parseChildren(name);
+                children = parseChildren(name);
             }
         } else {
             pos++;
         }
-        return node;
+        return {
+            tagName,
+            attributes,
+            children,
+        };
     }
 
     /**
@@ -218,10 +222,6 @@ function tXml(S, options) {
 
     if (options.filter) {
         out = tXml.filter(out, options.filter);
-    }
-
-    if (options.simplify) {
-        out = tXml.simplify(out);
     }
 
     if (options.setPos) {
@@ -353,10 +353,9 @@ tXml.toContentString = function(tDom) {
 
 tXml.getElementById = function(S, id, simplified) {
     var out = tXml(S, {
-        attrValue: id,
-        simplify: simplified
+        attrValue: id
     });
-    return simplified ? out : out[0];
+    return simplified ? tXml.simplify(out) : out[0];
 };
 /**
  * A fast parsing method, that not realy finds by classname,
@@ -364,11 +363,11 @@ tXml.getElementById = function(S, id, simplified) {
  * @param
  */
 tXml.getElementsByClassName = function(S, classname, simplified) {
-    return tXml(S, {
+    const out = tXml(S, {
         attrName: 'class',
-        attrValue: '[a-zA-Z0-9\-\s ]*' + classname + '[a-zA-Z0-9\-\s ]*',
-        simplify: simplified
+        attrValue: '[a-zA-Z0-9\-\s ]*' + classname + '[a-zA-Z0-9\-\s ]*'
     });
+    return simplified ? tXml.simplify(out) : out;
 };
 
 tXml.parseStream = function(stream, offset) {
@@ -417,6 +416,7 @@ tXml.parseStream = function(stream, offset) {
 
 if ('object' === typeof module) {
     module.exports = tXml;
+    tXml.xml = tXml;
 }
 //console.clear();
 //console.log('here:',tXml.getElementById('<some><xml id="test">dada</xml><that id="test">value</that></some>','test'));

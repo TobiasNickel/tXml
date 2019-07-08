@@ -9,3 +9,19 @@ stream.on('xml',function(data){
 stream.on('end',function(){
     process.exit();
 }) 
+
+// ;(async function(){
+//     console.log('start')
+//     for await (const data of stream) {
+//         console.log('data')
+//         stream.pause();
+//         console.log(data);
+//         await sleep(300);
+//         stream.resume();
+//     }
+
+// })().catch(err=>console.log(err));
+
+// function sleep(ms){
+//     return new Promise(resolve=>setTimeout(resolve,ms))
+// }

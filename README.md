@@ -31,10 +31,11 @@ so, there are good reasons to give tXml.js a try.
   11. xml namespaces
   12. sync API for a sync process
   13. getElementsById/-Class direct on the xmlString 
-  14. simplefy, similar to PHP's [SimpleXML](http://php.net/manual/en/book.simplexml.php)
+  14. simplify, similar to PHP's [SimpleXML](http://php.net/manual/en/book.simplexml.php)
   15. filter, similar to underscore, as a alternative to CSS selectors
+  16. monomorphism for fast processing and fewer if statements (a node always has tagName:'', attributes:{} and children:[])
   
-  16. streamSupport ! ! !
+  17. streamSupport ! ! !
 
 ## Try Online
 you can to some test without installing online: [tnickel.de](http://tnickel.de/2017/04/02/txml-online/)
@@ -96,16 +97,16 @@ and then in your script you require it by "var tXml = require('txml');
     }
 ```
 ### **tXml.simpify** *(tXml_DOM_Object)* 
-this methid is used with the simplify parameter;
+this method is used with the simplify parameter;
 1. **tXml_DOM_Object** the object to simplify.
 
 ### **tXml.filter** *(tXml_DOM_Object, f)* 
-this methid is used with the filter parameter, it is used like Array.filter.
+this method is used with the filter parameter, it is used like Array.filter.
 1. **tXml_DOM_Object** the object to filter.
 2. **f** a function that returns true if you want this elements in the result set.
 
 ### **tXml.getElementById** (xml,id) 
-to find an element by ID. if you are only interested for the information on, a specific node, this is easy and fast, because not the entire xml need to get parsed to a tDOM Object. returns the element not simplefied, you can do with tXml.simplify()
+to find an element by ID. if you are only interested for the information on, a specific node, this is easy and fast, because not the entire xml need to get parsed to a tDOM Object. returns the element not simplified, you can do with tXml.simplify()
 1. **xml** the xml string to search in.
 2. **id** the id of the element to find
 
