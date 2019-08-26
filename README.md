@@ -1,5 +1,5 @@
 # tXml
-a very small and propably the fastest xml parser in pure javascript.
+a very small and probably the fastest xml parser in pure javascript.
 
 This lib only provides one single method. **tXml()**
 
