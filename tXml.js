@@ -191,7 +191,6 @@ function tXml(S, options) {
     /**
      *
      */
-
     function findElements() {
         var r = new RegExp('\\s' + options.attrName + '\\s*=[\'"]' + options.attrValue + '[\'"]').exec(S)
         if (r) {
@@ -390,21 +389,25 @@ tXml.parseStream = function(stream, offset) {
     stream.on('data', function(chunk) {
         cc++;
         data += chunk;
-        var lastpos = 0;
+        var lastPos = 0;
         do {
-            position = data.indexOf('<', position) + 1
+            position = data.indexOf('<', position) + 1;
+            if(!nextPosition) {
+                position = lastPos;
+                return;
+            }
             var res = tXml(data, { pos: position, parseNode: true, setPos: true });
             position = res.pos;
-            if (position > (data.length - 1) || position < lastpos) {
-                if (lastpos) {
-                    data = data.slice(lastpos);
-                    position = 0
-                    lastpos = 0;
+            if (position > (data.length - 1) || position < lastPos) {
+                if (lastPos) {
+                    data = data.slice(lastPos);
+                    position = 0;
+                    lastPos = 0;
                 }
                 return;
             } else {
                 stream.emit('xml', res);
-                lastpos = position;
+                lastPos = position;
             }
         } while (1);
     });
