@@ -1,6 +1,6 @@
 {
     "name": "txml",
-    "version": "3.0.5",
+    "version": "3.1.0",
     "description": "fastest XML DOM Parser for node/browser/worker",
     "main": "tXml.js",
     "scripts": {
@@ -24,5 +24,8 @@
     "bugs": {
         "url": "https://github.com/TobiasNickel/tXml/issues"
     },
-    "homepage": "https://github.com/TobiasNickel/tXml#readme"
+    "homepage": "https://github.com/TobiasNickel/tXml#readme",
+    "dependencies": {
+        "through2": "^3.0.1"
+    }
 }

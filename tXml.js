@@ -370,10 +370,6 @@ tXml.getElementsByClassName = function(S, classname, simplified) {
 };
 
 tXml.parseStream = function(stream, offset) {
-    if (typeof offset === 'function') {
-        cb = offset;
-        offset = 0;
-    }
     if (typeof offset === 'string') {
         offset = offset.length + 2;
     }
@@ -385,25 +381,26 @@ tXml.parseStream = function(stream, offset) {
 
     var position = offset;
     var data = '';
-    var cc = 0
     stream.on('data', function(chunk) {
-        cc++;
         data += chunk;
         var lastPos = 0;
         do {
             position = data.indexOf('<', position) + 1;
-            if(!nextPosition) {
+            if(!position) {
                 position = lastPos;
                 return;
             }
-            var res = tXml(data, { pos: position, parseNode: true, setPos: true });
+            if (data[position + 1] === '/') {
+                position = position + 1;
+                lastPos = pos;
+                continue;
+            }
+            var res = tXml(data, { pos: position-1, parseNode: true, setPos: true });
             position = res.pos;
             if (position > (data.length - 1) || position < lastPos) {
-                if (lastPos) {
-                    data = data.slice(lastPos);
-                    position = 0;
-                    lastPos = 0;
-                }
+                data = data.slice(lastPos);
+                position = 0;
+                lastPos = 0;
                 return;
             } else {
                 stream.emit('xml', res);
@@ -414,6 +411,47 @@ tXml.parseStream = function(stream, offset) {
     stream.on('end', function() {
         console.log('end')
     });
+    return stream;
+}
+
+tXml.transformStream = function (offset) {
+    // require through here, so it will not get added to webpack/browserify
+    const through2 = require('through2');
+    if (typeof offset === 'string') {
+        offset = offset.length + 2;
+    }
+
+    var position = offset || 0;
+    var data = '';
+    const stream = through2({ readableObjectMode: true }, function (chunk, enc, callback) {
+        data += chunk;
+        var lastPos = 0;
+        do {
+            position = data.indexOf('<', position) + 1;
+            if (!position) {
+                position = lastPos;
+                return callback();;
+            }
+            if (data[position + 1] === '/') {
+                position = position + 1;
+                lastPos = pos;
+                continue;
+            }
+            var res = tXml(data, { pos: position - 1, parseNode: true, setPos: true });
+            position = res.pos;
+            if (position > (data.length - 1) || position < lastPos) {
+                data = data.slice(lastPos);
+                position = 0;
+                lastPos = 0;
+                return callback();;
+            } else {
+                this.push(res);
+                lastPos = position;
+            }
+        } while (1);
+        callback();
+    });
+
     return stream;
 }
 

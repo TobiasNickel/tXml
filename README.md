@@ -127,6 +127,20 @@ find the elements with the given class, without parsing the entire xml into a tD
 return stream, triggers even "xml" to get notified when a complete node has been parsed.
 is usefull for huge files, OSM-world, wikipedia-dump.
 
+### **txml.transformStream** (offset)
+2. offset optional you to set short before the first item.
+        usually files begin with simething like "<!DOCTYPE osm><osm>"
+        so the offset need to be before the first item starts so that 
+        between that item and the offset is no "<" character.
+        alternatively, pass astring, containing this preample.
+return transformStream.
+```js
+const xmlStream = fs.createReadStream('your.xml').pipe(txml.transformStream())
+for await(let element of xmlStream) {
+    // your logic here ...
+}
+```
+
 
 
 
