@@ -136,7 +136,7 @@ find the elements with the given class, without parsing the entire xml into a tD
 is usefull for huge files, OSM-world, wikipedia-dump.
 
 ### **txml.transformStream** (offset)
-2. offset optional you to set short before the first item.
+1. offset optional you to set short before the first item.
         usually files begin with simething like "<!DOCTYPE osm><osm>"
         so the offset need to be before the first item starts so that 
         between that item and the offset is no "<" character.
