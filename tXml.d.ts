@@ -62,3 +62,9 @@ export declare function getElementsByClassName(S: string, className: string, sim
  * @param stream has extra event xml, that return parsed objects
  */
 export declare function parseStream(stream: string|stream.Stream): stream.Stream;
+
+/**
+ * 
+ * @return transformstream has extra event xml, that return parsed objects
+ */
+export declare function transformStream(): stream.Transform;
