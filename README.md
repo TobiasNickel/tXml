@@ -18,6 +18,7 @@ This lib only provides one single method. **tXml()**
 so, there are good reasons to give tXml.js a try. 
 
 ## XML - features
+
   1. tags
   2. childTags
   3. text-nodes
@@ -34,11 +35,11 @@ so, there are good reasons to give tXml.js a try.
   14. simplify, similar to PHP's [SimpleXML](http://php.net/manual/en/book.simplexml.php)
   15. filter, similar to underscore, as a alternative to CSS selectors
   16. monomorphism for fast processing and fewer if statements (a node always has tagName:'', attributes:{} and children:[])
-  
   17. streamSupport ! ! !
 
 ## Try Online
-you can to some test without installing online: [tnickel.de](http://tnickel.de/2017/04/02/txml-online/)
+
+Try without installing online: http://tnickel.de/2017/04/02/txml-online
 
 ## Installation
 In browser you load it how ever you want. For example as tag: <script src="tXml.js"></script>.
@@ -56,7 +57,8 @@ and then in your script you require it by "var tXml = require('txml');
         **simplify** to simplify the object, to an easier access
         
     
-    EXAMPLE 1: tXml("<user is='great'><name>Tobias</name><familyName>Nickel</familyName><profession>Software Developer</profession><location>Shanghai / China</location></user>");
+EXAMPLE 1: `tXml("<user is='great'><name>Tobias</name><familyName>Nickel</familyName><profession>Software Developer</profession><location>Shanghai / China</location></user>");`
+    
 ```js
     // will return an object like: 
     [{
@@ -79,8 +81,9 @@ and then in your script you require it by "var tXml = require('txml');
             }
         ]
     }]    
-```   
-    EXAMLPLE 2: tXml("<user is='great'><name>Tobias</name><familyName>Nickel</familyName><profession>Software Developer</profession><location>Shanghai / China</location></user>",{simplify:1});
+```  
+
+EXAMLPLE 2: `tXml.simplify(tXml("<user is='great'><name>Tobias</name><familyName>Nickel</familyName><profession>Software Developer</profession><location>Shanghai / China</location></user>"));`
 
 ```js
     // will return an object like: 
@@ -98,18 +101,22 @@ and then in your script you require it by "var tXml = require('txml');
 ```
 ### **tXml.simpify** *(tXml_DOM_Object)* 
 this method is used with the simplify parameter;
+
 1. **tXml_DOM_Object** the object to simplify.
 
 ### **tXml.filter** *(tXml_DOM_Object, f)* 
 this method is used with the filter parameter, it is used like Array.filter.
+
 1. **tXml_DOM_Object** the object to filter.
 2. **f** a function that returns true if you want this elements in the result set.
 
 ### **tXml.getElementById** (xml,id) 
-to find an element by ID. if you are only interested for the information on, a specific node, this is easy and fast, because not the entire xml need to get parsed to a tDOM Object. returns the element not simplified, you can do with tXml.simplify()
+to find an element by ID. if you are only interested for the information on, a specific node, this is easy and fast, because not the entire xml need to get parsed to a tDOM Object.
+
 1. **xml** the xml string to search in.
 2. **id** the id of the element to find
 
+**returns** the element not simplified, you can do with tXml.simplify()
 
 ### **tXml.getElementsByClassName** (xml,className) 
 find the elements with the given class, without parsing the entire xml into a tDOM. so it is very fast and convenient. returns a list of elements. 
@@ -142,9 +149,9 @@ for await(let element of xmlStream) {
 }
 ```
 
-
-
-
 ## Developer
+
+![alt text](https://avatars1.githubusercontent.com/u/4189801?s=150)
+
 [Tobias Nickel](http://tnickel.de/) German software developer in Shanghai. 
-![alt text](https://avatars1.githubusercontent.com/u/4189801?s=150) 
+

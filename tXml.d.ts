@@ -21,8 +21,8 @@ export interface IParsingOptions {
 }
 
 export interface IAnyObject {
-    [x as string]: string | IAnyObject
-    __attributes: { [x as string]: string }
+    __attributes: IAnyObject
+    [x: string]: string | IAnyObject
 }
 
 export declare function xml(S: string, options?: IParsingOptions): [INode];
