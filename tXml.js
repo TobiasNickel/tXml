@@ -364,7 +364,7 @@ tXml.getElementById = function(S, id, simplified) {
 tXml.getElementsByClassName = function(S, classname, simplified) {
     const out = tXml(S, {
         attrName: 'class',
-        attrValue: '[a-zA-Z0-9\-\s ]*' + classname + '[a-zA-Z0-9\-\s ]*'
+        attrValue: '[a-zA-Z0-9- ]*' + classname + '[a-zA-Z0-9- ]*'
     });
     return simplified ? tXml.simplify(out) : out;
 };
@@ -442,7 +442,6 @@ tXml.transformStream = function (offset) {
             if (position > (data.length - 1) || position < lastPos) {
                 data = data.slice(lastPos);
                 position = 0;
-                lastPos = 0;
                 return callback();;
             } else {
                 this.push(res);

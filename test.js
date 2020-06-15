@@ -60,8 +60,8 @@ assert.deepEqual(
 var x = '<test a="value"><child a=\'g"g\'>text</child></test>'
 assert(x === xml.stringify(xml(x)),'optimal xml string need to keep the same');
 
-var xShould = [{"tagName":"h1","attributes":{"class":"test package-name"},"children":[]}];
-var x = xml.getElementsByClassName('<html><head></head><body><h1 class="test package-name"></h1></body></html>','package-name');
+var xShould = [{"tagName":"h1","attributes":{"class":"test package-name other-class test2"},"children":[]}];
+var x = xml.getElementsByClassName('<html><head></head><body><h1 class="test package-name other-class test2"></h1></body></html>','package-name');
 assert.deepEqual(x,xShould,'find elements by class')
 
 // re-stringify an attribute without value
