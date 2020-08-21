@@ -49,12 +49,21 @@ assert.deepEqual(
 );
 assert.deepEqual(
 	xml('<test><style>*{some:10px;}/* <tag> comment */</style></test>'),
-	[{"tagName":"test","attributes":{},"children":[{"tagName":"style","attributes":{},"children":["*{some:10px;}/* <tag> comment *"]}]}]	,
+	[{"tagName":"test","attributes":{},"children":[{"tagName":"style","attributes":{},"children":["*{some:10px;}/* <tag> comment */"]}]}]	,
 	'css with tag as comment'
 );
+
+assert.deepEqual(xml('<style>p { color: "red" }</style>'),[
+	{
+	  tagName: 'style',
+	  attributes: {},
+	  children: [ 'p { color: "red" }' ] // note here the closing bracket is missing
+	}
+], 'do not cut off the last character');
+
 assert.deepEqual(
 	xml('<test><script>$("<div>")</script></test>'),
-	[{"tagName":"test","attributes":{},"children":[{"tagName":"script","attributes":{},"children":["$(\"<div>\""]}]}],
+	[{"tagName":"test","attributes":{},"children":[{"tagName":"script","attributes":{},"children":["$(\"<div>\")"]}]}],
 	'js creating some tags'
 );
 var x = '<test a="value"><child a=\'g"g\'>text</child></test>'
@@ -73,10 +82,6 @@ assert(xml.toContentString(xml('<test>f<case number="2">f</case>f</test>'))==="f
 assert.deepEqual(
 	xml.getElementById('<test><child id="theId">found</child></test>','theId'),
 	{"tagName":"child","attributes":{"id":"theId"},"children":["found"]},'id not found')
-
-
-
-
 
 
 

@@ -156,12 +156,12 @@ function tXml(S, options) {
             if (tagName == "script") {
                 var start = pos + 1;
                 pos = S.indexOf('</script>', pos);
-                children = [S.slice(start, pos - 1)];
+                children = [S.slice(start, pos)];
                 pos += 9;
             } else if (tagName == "style") {
                 var start = pos + 1;
                 pos = S.indexOf('</style>', pos);
-                children = [S.slice(start, pos - 1)];
+                children = [S.slice(start, pos)];
                 pos += 8;
             } else if (NoChildNodes.indexOf(tagName) == -1) {
                 pos++;
@@ -231,10 +231,10 @@ function tXml(S, options) {
 }
 
 /**
- * transform the DomObject to an object that is like the object of PHPs simplexmp_load_*() methods.
- * this format helps you to write that is more likely to keep your programm working, even if there a small changes in the XML schema.
+ * transform the DomObject to an object that is like the object of PHPs simple_xmp_load_*() methods.
+ * this format helps you to write that is more likely to keep your program working, even if there a small changes in the XML schema.
  * be aware, that it is not possible to reproduce the original xml from a simplified version, because the order of elements is not saved.
- * therefore your programm will be more flexible and easyer to read.
+ * therefore your program will be more flexible and easier to read.
  *
  * @param {tNode[]} children the childrenList
  */
