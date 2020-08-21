@@ -18,6 +18,8 @@ export interface IParsingOptions {
      * for other xml you might have to set it empty
      */
     noChildNodes?: string[];
+
+    filter?: (node: INode) => boolean;
 }
 
 export interface IAnyObject {

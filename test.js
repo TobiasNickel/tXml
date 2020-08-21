@@ -83,10 +83,7 @@ assert.deepEqual(
 	xml.getElementById('<test><child id="theId">found</child></test>','theId'),
 	{"tagName":"child","attributes":{"id":"theId"},"children":["found"]},'id not found')
 
-
-
-
-
-
-
-
+assert.deepEqual(xml(`<xml><![CDATA[some data]]></xml>`),
+	[ { tagName: 'xml', attributes: {}, children: [ 'some data' ] } ],
+	'cdata'
+);

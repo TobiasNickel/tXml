@@ -45,6 +45,11 @@ function tXml(S, options) {
     var singleQuoteCC = "'".charCodeAt(0);
     var doubleQuote = '"';
     var doubleQuoteCC = '"'.charCodeAt(0);
+    var openCornerBracket = '[';
+    var openCornerBracketCC = '['.charCodeAt(0);
+    var closeCornerBracket = ']';
+    var closeCornerBracketCC = ']'.charCodeAt(0);
+    
 
     /**
      * parsing a list of entries
@@ -66,6 +71,22 @@ function tXml(S, options) {
                         if (pos === -1) {
                             pos = S.length
                         }
+                    }else if(
+                        S.charCodeAt(pos + 2) === openCornerBracketCC
+                        && S.charCodeAt(pos + 8) === openCornerBracketCC
+                        && S.substr(pos+3, 5).toLowerCase() === 'cdata'
+                    ){
+                        console.log('data')
+                        // cdata
+                        var cdataEndIndex = S.indexOf(']]>',pos)
+                        if (cdataEndIndex==-1) {
+                            children.push(S.substr(pos+8));
+                            pos=S.length;
+                        } else {
+                            children.push(S.substring(pos+9, cdataEndIndex));
+                            pos = cdataEndIndex + 3;
+                        }
+                        continue
                     } else {
                         // doctypesupport
                         pos += 2;
