@@ -12,7 +12,7 @@
 /**
  * @typedef tNode 
  * @property {string} tagName 
- * @property {object} [attributes] 
+ * @property {object} attributes
  * @property {tNode|string|number[]} children 
  **/
 
@@ -76,7 +76,6 @@ function tXml(S, options) {
                         && S.charCodeAt(pos + 8) === openCornerBracketCC
                         && S.substr(pos+3, 5).toLowerCase() === 'cdata'
                     ){
-                        console.log('data')
                         // cdata
                         var cdataEndIndex = S.indexOf(']]>',pos)
                         if (cdataEndIndex==-1) {
@@ -122,7 +121,7 @@ function tXml(S, options) {
     /**
      *    returns text until the first nonAlphebetic letter
      */
-    var nameSpacer = '\n\t>/= ';
+    var nameSpacer = '\r\n\t>/= ';
 
     function parseName() {
         var start = pos;
@@ -291,17 +290,66 @@ tXml.simplify = function simplify(children) {
     return out;
 };
 
+
+/**
+ * similar to simplify, but lost less
+ *
+ * @param {tNode[]} children the childrenList
+ */ 
+tXml.simplifyLostLess = function simplify(children, parentAttributes={}) {
+    var out = {};
+    if (!children.length) {
+        return '';
+    }
+
+    if (children.length === 1 && typeof children[0] == 'string') {
+        return children[0];
+    }
+    // map each object
+    children.forEach(function(child) {
+        if (typeof child !== 'object') {
+            return;
+        }
+        if (!out[child.tagName])
+            out[child.tagName] = [];
+        var kids = tXml.simplify(child.children||[], child.attributes);
+        out[child.tagName].push(kids);
+        if (Object.keys(child.attributes).length) {
+            kids._attributes = child.attributes;
+        }
+    });
+
+    for (var i in out) {
+        if (out[i].length == 1) {
+            if(typeof(out[i][0]) === 'string') {
+                if (Object.keys(parentAttributes).length) {
+                    out[i] = {
+                        value: out[i][0],
+                        _attributes: parentAttributes,
+                    };
+                } else {
+                    out[i] = out[i][0];
+                }
+            } else {
+                out[i] = out[i][0];
+            }
+        }
+    }
+
+    return out;
+};
+
 /**
  * behaves the same way as Array.filter, if the filter method return true, the element is in the resultList
  * @params children{Array} the children of a node
  * @param f{function} the filter method
  */
-tXml.filter = function(children, f) {
+tXml.filter = function(children, f, dept=0) {
     var out = [];
     children.forEach(function(child) {
         if (typeof(child) === 'object' && f(child)) out.push(child);
         if (child.children) {
-            var kids = tXml.filter(child.children, f);
+            var kids = tXml.filter(child.children, f, dept+1);
             out = out.concat(kids);
         }
     });
@@ -315,7 +363,7 @@ tXml.filter = function(children, f) {
  * 2. to recreate xml data, with some changed data.
  * @param {tNode} O the object to Stringify
  */
-tXml.stringify = function TOMObjToXML(O) {
+tXml.stringify = function stringify(O) {
     var out = '';
 
     function writeChildren(O) {
@@ -377,11 +425,7 @@ tXml.getElementById = function(S, id, simplified) {
     });
     return simplified ? tXml.simplify(out) : out[0];
 };
-/**
- * A fast parsing method, that not realy finds by classname,
- * more: the class attribute contains XXX
- * @param
- */
+
 tXml.getElementsByClassName = function(S, classname, simplified) {
     const out = tXml(S, {
         attrName: 'class',
@@ -429,9 +473,9 @@ tXml.parseStream = function(stream, offset) {
             }
         } while (1);
     });
-    stream.on('end', function() {
-        console.log('end')
-    });
+    // stream.on('end', function() {
+    //     console.log('end')
+    // });
     return stream;
 }
 

@@ -5,7 +5,7 @@ This lib only provides one single method. **xml()**
 
 1. this code is about 230 lines, can be easily extended. 
 2. this code is 0.9kb minified + gzipped.
-3. this code is 5 - 10 times faster than sax/xml2js and still 2-3 times faster than fast-xml-parser
+3. this code is 5 - 10 times faster than sax/xml2js and still 2-3 times [faster than fast-xml-parser](https://github.com/tobiasnickel/fast-xml-parser#benchmark)
 4. this code can running in a worker.
 5. this code is parsing at average the same speed as native DOMParser + potential to be faster.
 6. this code is easy to read and good for study. 
@@ -43,9 +43,9 @@ so, there are good reasons to give tXml.js a try.
 Try without installing online: http://tnickel.de/2017/04/02/txml-online
 
 ## Installation
-In browser you load it how ever you want. For example as tag: <script src="tXml.js"></script>.
+In browser you load it how ever you want. For example as tag: <script src="tXml.min.js"></script>.
 
-In node and browserify, run **"npm install txml"** in your project.
+In node and browserify, run **"npm install txml"** in your project
 and then in your script you require it by `const xml = require('txml');`
 
 ## Methods
@@ -53,9 +53,10 @@ and then in your script you require it by `const xml = require('txml');`
 ### **xml** *(xmlString, options)*
 1. **xmlString** is the XML to parse.
 2. **options** is optional 
-        **searchId** an ID of some object. that can be queried. Using this is incredible fast. 
-        **filter** a method, to filter for interesting nodes, use it like Array.filter.
-        **simplify** to simplify the object, to an easier access
+    - **searchId** an ID of some object. that can be queried. Using this is incredible fast. 
+    - **filter** a method, to filter for interesting nodes, use it like Array.filter.
+    - **simplify** to simplify the object, to an easier access.
+    - **pos** where to start parsing.
 ```js
     xml(`<user is='great'>
         <name>Tobias</name>
@@ -114,6 +115,9 @@ this method is used with the simplify parameter;
     }
 ```
 
+### **xml.simplifyListLess** *(tXml_DOM_Object)* 
+Same purpose of simplify, to make the data easier accessible, but this version is not the same as in PHP simple_xml, but therefor, you do not lose any information.
+
 ### **xml.filter** *(tXml_DOM_Object, f)* 
 This method is used with the filter parameter, it is used like Array.filter. But it will traverse the entire deep tree.
 1. **tXml_DOM_Object** the object to filter.
@@ -136,10 +140,8 @@ const styleElement = data.filter(dom, node=>node.tagName.toLowerCase() === 'styl
 
 ### **xml.getElementById** (xml, id) 
 To find an element by ID. If you are only interested for the information on, a specific node, this is easy and fast, because not the entire xml text need to get parsed, but only the small section you are interested in.
-
 1. **xml** the xml string to search in.
 2. **id** the id of the element to find
-
 **returns** return one node
 
 ### **xml.getElementsByClassName** (xml, className) 

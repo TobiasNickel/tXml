@@ -1,4 +1,4 @@
-const { xml } = require('./tXml');
+const xml = require('./tXml');
 const assert = require('assert');
 
 assert(xml, 'tXml is available');
@@ -43,8 +43,8 @@ assert.deepEqual(
 	'get all "cc" nodes'
 );
 assert.deepEqual(
-	xml.simplify(xml('<test><cc>one</cc>test<cc f="test"><sub>3</sub>two</cc><dd></dd></test>')),
-	{"test":{"cc":["one",{"sub":"3","_attributes":{"f":"test"}}],dd:'', _attributes: {}}},
+	JSON.stringify(xml.simplify(xml('<test><cc>one</cc>test<cc f="test"><sub>3</sub>two</cc><dd></dd></test>'))),
+	JSON.stringify({"test":{"cc":["one",{"sub":{"value":"3","_attributes":{"f":"test"}},"_attributes":{"f":"test"}}],"dd":""}}),
 	'simplify'
 );
 assert.deepEqual(

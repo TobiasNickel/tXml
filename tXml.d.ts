@@ -19,6 +19,14 @@ export interface IParsingOptions {
      */
     noChildNodes?: string[];
 
+    /**
+     * boolean to indicate that you need to know the ending position.
+     */
+    setPos: boolean = false;
+
+    /**
+     * filter the output nodes, same as xml.filter after parsing.
+     */
     filter?: (node: INode) => boolean;
 }
 
@@ -53,7 +61,7 @@ export declare function getElementById(S: string, id: string, simplify: true): I
  * not the rest.
  * 
  * @param S the xml string
- * @param className  the elements's class for what you are interested
+ * @param className  the element's class for what you are interested
  * @param simplify (optional) wether to call simplify
  */
 export declare function getElementsByClassName(S: string, className: string, simplify?: false): [INode];
@@ -67,6 +75,12 @@ export declare function parseStream(stream: string|stream.Stream): stream.Stream
 
 /**
  * 
- * @return transformstream has extra event xml, that return parsed objects
+ * create transform Stream, that you can pipe buffer or strings to and get a stream of INodes
+ * ```js
+ * const xmlStream = fileReadStream.pipe(xml.transformStream(planetFilePreamble.length));
+ * for await (const node of xmlStream) {
+ *   // process node
+ * }
+ * ```
  */
 export declare function transformStream(): stream.Transform;
