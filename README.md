@@ -57,6 +57,7 @@ and then in your script you require it by `const xml = require('txml');`
     - **filter** a method, to filter for interesting nodes, use it like Array.filter.
     - **simplify** to simplify the object, to an easier access.
     - **pos** where to start parsing.
+    - **noChildNodes** array of nodes, that have no children and don't need to be closed. Default is working good for html. For example when parsing rss, the link tag is used to really provide an URL that the user can open. In html however a link text is used to bind css or other resource into the document. In HTML it does not need to get closed. so by default the noChildNodes containes the tagName 'link'. Same as 'img', 'br', 'input', 'meta', 'link'. That means: when parsing rss, it makes to set `noChildNodes` to [], an empty array.
 ```js
     xml(`<user is='great'>
         <name>Tobias</name>
@@ -116,7 +117,7 @@ this method is used with the simplify parameter;
 ```
 
 ### **xml.simplifyListLess** *(tXml_DOM_Object)* 
-Same purpose of simplify, to make the data easier accessible, but this version is not the same as in PHP simple_xml, but therefor, you do not lose any information.
+Same purpose of simplify, to make the data easier accessible, but this version is not the same as in PHP simple_xml, but therefor, you do not lose any information. if there are attributes, you get an _attribute property, even if there is only one of a kind, it will be a list with one item, for consistent code.
 
 ### **xml.filter** *(tXml_DOM_Object, f)* 
 This method is used with the filter parameter, it is used like Array.filter. But it will traverse the entire deep tree.

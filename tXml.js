@@ -203,7 +203,7 @@ function tXml(S, options) {
 
     function parseString() {
         var startChar = S[pos];
-        var startpos = ++pos;
+        var startpos = pos+1;
         pos = S.indexOf(startChar, startpos)
         return S.slice(startpos, pos);
     }
@@ -251,7 +251,7 @@ function tXml(S, options) {
 }
 
 /**
- * transform the DomObject to an object that is like the object of PHPs simple_xmp_load_*() methods.
+ * transform the DomObject to an object that is like the object of PHP`s simple_xmp_load_*() methods.
  * this format helps you to write that is more likely to keep your program working, even if there a small changes in the XML schema.
  * be aware, that it is not possible to reproduce the original xml from a simplified version, because the order of elements is not saved.
  * therefore your program will be more flexible and easier to read.
@@ -274,9 +274,9 @@ tXml.simplify = function simplify(children) {
         }
         if (!out[child.tagName])
             out[child.tagName] = [];
-        var kids = tXml.simplify(child.children||[]);
+        var kids = tXml.simplify(child.children);
         out[child.tagName].push(kids);
-        if (child.attributes) {
+        if (Object.keys(child.attributes).length) {
             kids._attributes = child.attributes;
         }
     });
@@ -303,7 +303,10 @@ tXml.simplifyLostLess = function simplify(children, parentAttributes={}) {
     }
 
     if (children.length === 1 && typeof children[0] == 'string') {
-        return children[0];
+        return Object.keys(parentAttributes).length ? {
+            _attributes: parentAttributes,
+            value: children[0]
+        } :children[0];
     }
     // map each object
     children.forEach(function(child) {
@@ -312,29 +315,12 @@ tXml.simplifyLostLess = function simplify(children, parentAttributes={}) {
         }
         if (!out[child.tagName])
             out[child.tagName] = [];
-        var kids = tXml.simplify(child.children||[], child.attributes);
+        var kids = tXml.simplifyLostLess(child.children||[], child.attributes);
         out[child.tagName].push(kids);
         if (Object.keys(child.attributes).length) {
             kids._attributes = child.attributes;
         }
     });
-
-    for (var i in out) {
-        if (out[i].length == 1) {
-            if(typeof(out[i][0]) === 'string') {
-                if (Object.keys(parentAttributes).length) {
-                    out[i] = {
-                        value: out[i][0],
-                        _attributes: parentAttributes,
-                    };
-                } else {
-                    out[i] = out[i][0];
-                }
-            } else {
-                out[i] = out[i][0];
-            }
-        }
-    }
 
     return out;
 };
@@ -344,12 +330,12 @@ tXml.simplifyLostLess = function simplify(children, parentAttributes={}) {
  * @params children{Array} the children of a node
  * @param f{function} the filter method
  */
-tXml.filter = function(children, f, dept=0) {
+tXml.filter = function(children, f, dept=0,path='') {
     var out = [];
-    children.forEach(function(child) {
-        if (typeof(child) === 'object' && f(child)) out.push(child);
+    children.forEach(function(child, i) {
+        if (typeof(child) === 'object' && f(child, i, dept, path)) out.push(child);
         if (child.children) {
-            var kids = tXml.filter(child.children, f, dept+1);
+            var kids = tXml.filter(child.children, f, dept+1, (path?path+'.':'')+i+'.'+child.tagName);
             out = out.concat(kids);
         }
     });
@@ -359,7 +345,7 @@ tXml.filter = function(children, f, dept=0) {
 /**
  * stringify a previously parsed string object.
  * this is useful,
- *  1. to remove whitespaces
+ *  1. to remove whitespace
  * 2. to recreate xml data, with some changed data.
  * @param {tNode} O the object to Stringify
  */
@@ -399,7 +385,7 @@ tXml.stringify = function stringify(O) {
 
 
 /**
- * use this method to read the textcontent, of some node.
+ * use this method to read the text content, of some node.
  * It is great if you have mixed content like:
  * this text has some <b>big</b> text and a <a href=''>link</a>
  * @return {string}

@@ -27,7 +27,7 @@ export interface IParsingOptions {
     /**
      * filter the output nodes, same as xml.filter after parsing.
      */
-    filter?: (node: INode) => boolean;
+    filter?: (node: INode,i: number, dept: number, path: string) => boolean;
 }
 
 export interface IAnyObject {
@@ -36,9 +36,10 @@ export interface IAnyObject {
 }
 
 export declare function xml(S: string, options?: IParsingOptions): [INode];
-export declare function simplify(nodes: INode): IAnyObject;
-export declare function filter(nodes: INode, filter: () => boolean): INode;
-export declare function stringify(nodes: INode): string;
+export declare function simplify(nodes: INode[]): IAnyObject;
+export declare function simplifyLostLess(nodes: INode[]): IAnyObject;
+export declare function filter(nodes: INode, filter: (node:INode,i: number, dept: number, path: string) => boolean): INode;
+export declare function stringify(nodes: INode[]): string;
 export declare function toContentString(nodes: INode): string;
 
 
