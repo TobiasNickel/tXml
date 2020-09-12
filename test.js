@@ -157,6 +157,35 @@ assert.deepEqual(xml.simplifyLostLess(xml(`<question>
 	'simplifyLostLess'
 );
 
+const commentedSvgFilePath = __dirname + '/test/examples/commented.svg'
+const svgWithCommentString = fs.readFileSync(commentedSvgFilePath).toString();
+assert.deepEqual(
+	xml(svgWithCommentString),
+	[{tagName:"svg",attributes:{height:"200",width:"500"},children:[{tagName:"polyline",attributes:{points:"20,20 40,25 60,40 80,120 120,140 200,180",style:"fill:none;stroke:black;stroke-width:3"},children:[]}]}],
+	'svg with comment'
+);
+
+// https://github.com/TobiasNickel/tXml/issues/14
+testAsync().catch(err=>console.log(err));
+async function testAsync(){
+	const xmlStreamCommentedSvg = fs.createReadStream(commentedSvgFilePath)
+		 .pipe(xml.transformStream());
+	let numberOfElements = 0;
+	for await(let element of xmlStreamCommentedSvg) {
+		numberOfElements++;
+	}
+	assert.equal(numberOfElements, 1, 'expect to find one element in commented.svg')
+
+	console.log('start long ...');
+	const xmlStreamLongXML = fs.createReadStream(__dirname + '/long.xml')
+		.pipe(xml.transformStream(5));
+	numberOfElements = 0;
+	for await(let element of xmlStreamLongXML) {
+		numberOfElements++;
+	}
+	assert.equal(numberOfElements, 10000000, 'expected to find many')
+}
+
 
 // const tagesschauData = fs.readFileSync('./test/examples/tagesschau.rss').toString();
 // const tagesschauDOM = xml(tagesschauData, {

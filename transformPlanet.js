@@ -2,7 +2,7 @@ const bz2 = require('unbzip2-stream');
 const http = require('https');
 const xml = require('./tXml.js');
 
-const planetMapUrl = "https://ftp5.gwdg.de/pub/misc/openstreetmap/planet.openstreetmap.org/planet/2019/planet-190930.osm.bz2";
+const planetMapUrl = "https://planet.openstreetmap.org/planet/planet-latest.osm.bz2";
 const planetFilePreamble = `<?xml version="1.0" encoding="UTF-8"?>
 // <osm license="http://opendatacommons.org/licenses/odbl/1-0/" copyright="OpenStreetMap and contributors" version="0.6" generator="planet-dump-ng 1.1.6" attribution="http://www.openstreetmap.org/copyright" timestamp="2019-09-29T23:59:55Z">
 //  <bound box="-90,-180,90,180" origin="http://www.openstreetmap.org/api/0.6"/>`;

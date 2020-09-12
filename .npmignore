@@ -1,6 +1,8 @@
 test/
+txml2js/
 exampleObj.js
 test.js
+long.xml
 writeLongxml.js
 transformPlanet.js
 testStream.js

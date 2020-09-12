@@ -85,7 +85,7 @@ function tXml(S, options) {
                             children.push(S.substring(pos+9, cdataEndIndex));
                             pos = cdataEndIndex + 3;
                         }
-                        continue
+                        continue;
                     } else {
                         // doctypesupport
                         pos += 2;
@@ -119,7 +119,7 @@ function tXml(S, options) {
         return S.slice(start, pos + 1);
     }
     /**
-     *    returns text until the first nonAlphebetic letter
+     *    returns text until the first nonAlphabetic letter
      */
     var nameSpacer = '\r\n\t>/= ';
 
@@ -488,6 +488,22 @@ tXml.transformStream = function (offset) {
                 lastPos = pos;
                 continue;
             }
+
+            if (data[position + 0]==='!'
+                && data[position + 1] === '-'
+                && data[position + 2] === '-'
+            ) {
+                const commentEnd = data.indexOf('-->', position);
+                if(commentEnd !== -1){
+                    lastPos = position;
+                    position = commentEnd + 3;
+                    continue;
+                } else {
+                    position--;
+                    return callback();
+                }
+            }
+
             var res = tXml(data, { pos: position - 1, parseNode: true, setPos: true });
             position = res.pos;
             if (position > (data.length - 1) || position < lastPos) {
