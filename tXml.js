@@ -54,22 +54,35 @@ function tXml(S, options) {
     /**
      * parsing a list of entries
      */
-    function parseChildren() {
+    function parseChildren(tagName) {
         var children = [];
         while (S[pos]) {
             if (S.charCodeAt(pos) == openBracketCC) {
                 if (S.charCodeAt(pos + 1) === slashCC) {
+                    var closeStart= pos+2;
                     pos = S.indexOf(closeBracket, pos);
-                    if (pos + 1) pos += 1
+                    
+                    var closeTag = S.substring(closeStart, pos)
+                    if (closeTag.indexOf(tagName) == -1) {
+                        var parsedText = S.substring(0, pos).split('\n');
+                        throw new Error('Unexpected close tag\nLine: ' + (parsedText.length - 1) + '\nColumn: ' + (parsedText[parsedText.length - 1].length + 1) + '\nChar: ' + S[pos])
+                    }
+
+                    if (pos + 1) pos += 1;
+
                     return children;
                 } else if (S.charCodeAt(pos + 1) === exclamationCC) {
                     if (S.charCodeAt(pos + 2) == minusCC) {
                         //comment support
+                        const startCommentPos = pos;
                         while (pos !== -1 && !(S.charCodeAt(pos) === closeBracketCC && S.charCodeAt(pos - 1) == minusCC && S.charCodeAt(pos - 2) == minusCC && pos != -1)) {
                             pos = S.indexOf(closeBracket, pos + 1);
                         }
                         if (pos === -1) {
                             pos = S.length
+                        }
+                        if (options.keepComments === true) {
+                            children.push(S.substring(startCommentPos, pos + 1));
                         }
                     }else if(
                         S.charCodeAt(pos + 2) === openCornerBracketCC
@@ -78,7 +91,7 @@ function tXml(S, options) {
                     ){
                         // cdata
                         var cdataEndIndex = S.indexOf(']]>',pos)
-                        if (cdataEndIndex==-1) {
+                        if (cdataEndIndex === -1) {
                             children.push(S.substr(pos+8));
                             pos=S.length;
                         } else {
@@ -88,10 +101,18 @@ function tXml(S, options) {
                         continue;
                     } else {
                         // doctypesupport
+                        const startDoctype = pos+1;
                         pos += 2;
-                        while (S.charCodeAt(pos) !== closeBracketCC && S[pos]) {
+                        var encapsuled = false;
+                        while ((S.charCodeAt(pos) !== closeBracketCC || encapsuled === true) && S[pos]) {
+                            if (S.charCodeAt(pos) === openCornerBracketCC) {
+                                encapsuled = true;
+                            } else if (encapsuled === true && S.charCodeAt(pos) === closeCornerBracketCC) {
+                                encapsuled = false;
+                            }
                             pos++;
                         }
+                        children.push(S.substring(startDoctype, pos));
                     }
                     pos++;
                     continue;
@@ -134,7 +155,7 @@ function tXml(S, options) {
      *    is parsing a node, including tagName, Attributes and its children,
      * to parse children it uses the parseChildren again, that makes the parsing recursive
      */
-    var NoChildNodes = options.noChildNodes || ['img', 'br', 'input', 'meta', 'link'];
+    var NoChildNodes = options.noChildNodes || ['?xml','img', 'br', 'input', 'meta', 'link'];
 
     function parseNode() {
         pos++;
@@ -183,9 +204,11 @@ function tXml(S, options) {
                 pos = S.indexOf('</style>', pos);
                 children = [S.slice(start, pos)];
                 pos += 8;
-            } else if (NoChildNodes.indexOf(tagName) == -1) {
+            } else if (NoChildNodes.indexOf(tagName)===-1) {
                 pos++;
                 children = parseChildren(name);
+            } else {
+                pos++;
             }
         } else {
             pos++;

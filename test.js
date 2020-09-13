@@ -17,7 +17,9 @@ assert.deepEqual(
 );
 assert.deepEqual(xml('childTest'), ["childTest"], 'a single text');
 assert.deepEqual(xml('<test>childTest'), [{ "tagName": "test", "attributes": {}, "children": ["childTest"] }], 'a single child text');
+
 assert.deepEqual(xml('<test></test>'), [{ "tagName": "test", "attributes": {}, "children": [] }], 'simple closingTag');
+
 assert.deepEqual(
 	xml('<test><cc></cc><cc></cc></test>'),
 	[{ "tagName": "test", "attributes": {}, "children": [{ "tagName": "cc", "attributes": {}, "children": [] }, { "tagName": "cc", "attributes": {}, "children": [] }] }],
@@ -30,10 +32,20 @@ assert.deepEqual(
 );
 assert.deepEqual(
 	xml('<!DOCTYPE html><test><cc></cc><cc></cc></test>'),
-	[{ "tagName": "test", "attributes": {}, "children": [{ "tagName": "cc", "attributes": {}, "children": [] }, { "tagName": "cc", "attributes": {}, "children": [] }] }],
+	['!DOCTYPE html',{ "tagName": "test", "attributes": {}, "children": [{ "tagName": "cc", "attributes": {}, "children": [] }, { "tagName": "cc", "attributes": {}, "children": [] }] }],
 	'two childNodes + ignore doctype declaration'
 );
 
+console.log(JSON.stringify(xml(`<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [
+<!ENTITY ns_extend "http://ns.adobe.com/Extensibility/1.0/">
+<!ENTITY ns_ai "http://ns.adobe.com/AdobeIllustrator/10.0/">
+<!ENTITY ns_graphs "http://ns.adobe.com/Graphs/1.0/">
+]>
+<svg xmlns:x="&ns_extend;" xmlns:i="&ns_ai;" xmlns:graph="&ns_graphs;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="583.029px" height="45px" viewBox="0 0 583.029 45" enable-background="new 0 0 583.029 45" xml:space="preserve">
+<input id="test">
+</svg>`),undefined,'  '));
 
 /******************************************************************************************************
  * use options 
@@ -155,6 +167,22 @@ assert.deepEqual(xml.simplifyLostLess(xml(`<question>
 		]
 	},
 	'simplifyLostLess'
+);
+
+assert.deepEqual(
+	xml(`<test><!-- test --></test>`, { keepComments: true }),
+	[ { tagName: 'test', attributes: {}, children: [ '<!-- test -->' ] } ],
+	'keepComments'
+);
+assert.deepEqual(
+	xml(`<test><!-- test --><!-- test2 --></test>`, { keepComments: true }),
+	[ { tagName: 'test', attributes: {}, children: [ '<!-- test -->', '<!-- test2 -->' ] } ],
+	'keep two comments'
+);
+assert.deepEqual(
+	xml(`<test><!--></test>`, { keepComments: true }),
+	[ { tagName: 'test', attributes: {}, children: [ '<!-->' ] } ],
+	'keep two comments'
 );
 
 const commentedSvgFilePath = __dirname + '/test/examples/commented.svg'
