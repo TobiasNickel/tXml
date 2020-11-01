@@ -178,6 +178,15 @@ for await(let element of xmlStream) {
 ```
 The transform stream is better, because when your logic is slow, the file read stream will also run slower, and not fill up the RAM memory. For a more detailed explanation read [here](http://tnickel.de/2019/10/15/2019-10-for-async-on-nodejs-streams/)
 
+## Roadmap for version 4
+  - improved support for CDATA: DONE
+  - option to keep comments: DONE
+  - comment support for transformStream (comments inside elements are working, but not top level)
+  - allow options for transformStream
+  - export parser function only as `txml`, it will be the cleanest in all environments and let the user use `txml(xml)` where xml is the string.
+  - remove `.parseStream` in favor of `transformStream`
+  - split transform stream into its own module, for smaller builds
+
 ## Developer
 
 ![alt text](https://avatars1.githubusercontent.com/u/4189801?s=150)

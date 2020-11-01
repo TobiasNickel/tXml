@@ -2,6 +2,12 @@ const xml = require('./tXml');
 const assert = require('assert');
 const fs = require('fs');
 
+const files = {
+	commented: __dirname + './test/examples/commented.svg',
+	twoComments: __dirname + './test/examples/twocommented.svg',
+	tagesschauRSS: './test/examples/tagesschau.rss',
+};
+
 assert(xml, 'tXml is available');
 assert(Array.isArray(xml('')), 'tXml don\'t return an empty array for an empty string');
 
@@ -185,24 +191,37 @@ assert.deepEqual(
 	'keep two comments'
 );
 
-const commentedSvgFilePath = __dirname + '/test/examples/commented.svg'
-const svgWithCommentString = fs.readFileSync(commentedSvgFilePath).toString();
+
+const svgWithCommentString = fs.readFileSync(files.commented).toString();
 assert.deepEqual(
 	xml(svgWithCommentString),
 	[{tagName:"svg",attributes:{height:"200",width:"500"},children:[{tagName:"polyline",attributes:{points:"20,20 40,25 60,40 80,120 120,140 200,180",style:"fill:none;stroke:black;stroke-width:3"},children:[]}]}],
 	'svg with comment'
 );
 
+console.log(xml(`<!-- Test -->
+<svg height="200" width="500">
+  <polyline points="20,20 40,25 60,40 80,120 120,140 200,180" style="fill:none;stroke:black;stroke-width:3" />
+</svg>`, { keepComments: true }))
+
 // https://github.com/TobiasNickel/tXml/issues/14
 testAsync().catch(err=>console.log(err));
 async function testAsync(){
-	const xmlStreamCommentedSvg = fs.createReadStream(commentedSvgFilePath)
+	const xmlStreamCommentedSvg = fs.createReadStream(files.commented)
 		 .pipe(xml.transformStream());
 	let numberOfElements = 0;
 	for await(let element of xmlStreamCommentedSvg) {
 		numberOfElements++;
 	}
-	assert.equal(numberOfElements, 1, 'expect to find one element in commented.svg')
+	assert.strictEqual(numberOfElements, 1, 'expect to find one element in commented.svg')
+
+	const xmlStreamTwoCommentedSvg = fs.createReadStream(files.twoComments)
+		 .pipe(xml.transformStream());
+	numberOfElements = 0;
+	for await(let element of xmlStreamTwoCommentedSvg) {
+		numberOfElements++;
+	}
+	assert.strictEqual(numberOfElements, 1, 'expect to find one element in commented.svg')
 
 	console.log('start long ...');
 	const xmlStreamLongXML = fs.createReadStream(__dirname + '/long.xml')
@@ -211,11 +230,11 @@ async function testAsync(){
 	for await(let element of xmlStreamLongXML) {
 		numberOfElements++;
 	}
-	assert.equal(numberOfElements, 10000000, 'expected to find many')
+	assert.strictEqual(numberOfElements, 10000000, 'expected to find many')
 }
 
 
-// const tagesschauData = fs.readFileSync('./test/examples/tagesschau.rss').toString();
+// const tagesschauData = fs.readFileSync(files.tagesschauRSS).toString();
 // const tagesschauDOM = xml(tagesschauData, {
 // 	noChildNodes: []
 // });

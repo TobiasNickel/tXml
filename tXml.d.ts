@@ -22,7 +22,12 @@ export interface IParsingOptions {
     /**
      * boolean to indicate that you need to know the ending position.
      */
-    setPos: boolean;
+    setPos?: boolean;
+
+    /**
+     * Wether or not to keep comments
+     */
+    keepComments?: boolean;
 
     /**
      * filter the output nodes, same as xml.filter after parsing.

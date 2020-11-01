@@ -50,6 +50,7 @@ function tXml(S, options) {
     var closeCornerBracket = ']';
     var closeCornerBracketCC = ']'.charCodeAt(0);
     
+    console.log(S)
 
     /**
      * parsing a list of entries
@@ -65,10 +66,14 @@ function tXml(S, options) {
                     var closeTag = S.substring(closeStart, pos)
                     if (closeTag.indexOf(tagName) == -1) {
                         var parsedText = S.substring(0, pos).split('\n');
-                        throw new Error('Unexpected close tag\nLine: ' + (parsedText.length - 1) + '\nColumn: ' + (parsedText[parsedText.length - 1].length + 1) + '\nChar: ' + S[pos])
+                        throw new Error(
+                            'Unexpected close tag\nLine: ' + (parsedText.length - 1) +
+                            '\nColumn: ' + (parsedText[parsedText.length - 1].length + 1) +
+                            '\nChar: ' + S[pos]
+                        );
                     }
 
-                    if (pos + 1) pos += 1;
+                    if (pos + 1) pos += 1
 
                     return children;
                 } else if (S.charCodeAt(pos + 1) === exclamationCC) {
@@ -84,14 +89,15 @@ function tXml(S, options) {
                         if (options.keepComments === true) {
                             children.push(S.substring(startCommentPos, pos + 1));
                         }
+                        console.log('comment', pos)
                     }else if(
                         S.charCodeAt(pos + 2) === openCornerBracketCC
                         && S.charCodeAt(pos + 8) === openCornerBracketCC
                         && S.substr(pos+3, 5).toLowerCase() === 'cdata'
                     ){
                         // cdata
-                        var cdataEndIndex = S.indexOf(']]>',pos)
-                        if (cdataEndIndex === -1) {
+                        var cdataEndIndex = S.indexOf(']]>', pos);
+                        if (cdataEndIndex==-1) {
                             children.push(S.substr(pos+8));
                             pos=S.length;
                         } else {
@@ -104,10 +110,10 @@ function tXml(S, options) {
                         const startDoctype = pos+1;
                         pos += 2;
                         var encapsuled = false;
-                        while ((S.charCodeAt(pos) !== closeBracketCC || encapsuled === true) && S[pos]) {
+                        while ((S.charCodeAt(pos) !== closeBracketCC || encapsuled === true) && S[pos] ) {
                             if (S.charCodeAt(pos) === openCornerBracketCC) {
                                 encapsuled = true;
-                            } else if (encapsuled === true && S.charCodeAt(pos) === closeCornerBracketCC) {
+                            } else if (encapsuled===true && S.charCodeAt(pos) === closeCornerBracketCC) {
                                 encapsuled = false;
                             }
                             pos++;
@@ -119,6 +125,10 @@ function tXml(S, options) {
                 }
                 var node = parseNode();
                 children.push(node);
+                if (node.tagName[0] === '?') {
+                    children.push(...node.children);
+                    node.children = [];
+                }
             } else {
                 var text = parseText()
                 if (text.trim().length > 0)
@@ -155,7 +165,7 @@ function tXml(S, options) {
      *    is parsing a node, including tagName, Attributes and its children,
      * to parse children it uses the parseChildren again, that makes the parsing recursive
      */
-    var NoChildNodes = options.noChildNodes || ['?xml','img', 'br', 'input', 'meta', 'link'];
+    var NoChildNodes = options.noChildNodes || ['img', 'br', 'input', 'meta', 'link'];
 
     function parseNode() {
         pos++;
@@ -204,11 +214,11 @@ function tXml(S, options) {
                 pos = S.indexOf('</style>', pos);
                 children = [S.slice(start, pos)];
                 pos += 8;
-            } else if (NoChildNodes.indexOf(tagName)===-1) {
+            } else if (NoChildNodes.indexOf(tagName) === -1) {
                 pos++;
-                children = parseChildren(name);
+                children = parseChildren(tagName);
             } else {
-                pos++;
+                pos++
             }
         } else {
             pos++;
@@ -259,7 +269,7 @@ function tXml(S, options) {
     } else if (options.parseNode) {
         out = parseNode()
     } else {
-        out = parseChildren();
+        out = parseChildren('');
     }
 
     if (options.filter) {
@@ -511,24 +521,10 @@ tXml.transformStream = function (offset) {
                 lastPos = pos;
                 continue;
             }
-
-            if (data[position + 0]==='!'
-                && data[position + 1] === '-'
-                && data[position + 2] === '-'
-            ) {
-                const commentEnd = data.indexOf('-->', position);
-                if(commentEnd !== -1){
-                    lastPos = position;
-                    position = commentEnd + 3;
-                    continue;
-                } else {
-                    position--;
-                    return callback();
-                }
-            }
-
+            console.log(position - 1); // todo: handle comments here as well, because of parseNode
             var res = tXml(data, { pos: position - 1, parseNode: true, setPos: true });
             position = res.pos;
+            console.log(res, res.pos)
             if (position > (data.length - 1) || position < lastPos) {
                 data = data.slice(lastPos);
                 position = 0;
