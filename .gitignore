@@ -1,2 +1,4 @@
 node_modules/
 long.xml
+coverage/
+.nyc_output

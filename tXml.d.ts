@@ -1,92 +1,77 @@
-import * as stream from 'stream';
-
-export interface INode {
+export type tNode = {
     tagName: string;
-    attributes: IAnyObject;
-    children: [INode | string];
-}
-
-export interface IParsingOptions {
-    /**
-     * position to start
-     */
-    pos?: string;
-
-    /**
-     * names of tags that do not get closed, even they are don't close with '\>'
-     * default is good for html: ['img', 'br', 'input', 'meta', 'link']
-     * for other xml you might have to set it empty
-     */
+    attributes: object;
+    children: tNode | string | number[];
+};
+export type TParseOptions = {
+    pos?: number;
     noChildNodes?: string[];
-
-    /**
-     * boolean to indicate that you need to know the ending position.
-     */
     setPos?: boolean;
-
-    /**
-     * Wether or not to keep comments
-     */
     keepComments?: boolean;
-
-    /**
-     * filter the output nodes, same as xml.filter after parsing.
-     */
-    filter?: (node: INode,i: number, dept: number, path: string) => boolean;
-}
-
-export interface IAnyObject {
-    __attributes: IAnyObject
-    [x: string]: string | IAnyObject
-}
-
-export declare function xml(S: string, options?: IParsingOptions): [INode];
-export declare function simplify(nodes: INode[]): IAnyObject;
-export declare function simplifyLostLess(nodes: INode[]): IAnyObject;
-export declare function filter(nodes: INode, filter: (node:INode,i: number, dept: number, path: string) => boolean): INode;
-export declare function stringify(nodes: INode[]): string;
-export declare function toContentString(nodes: INode): string;
-
-
+    filter?: (a: tNode, b: tNode) => boolean;
+};
 /**
- * 
- * This function is incredible fast, as it is able not to parse the entire xml,
- * but only the requested element. 
- * 
- * @param S the xml string
- * @param id the element identifier for what you are interested
- * @param simplify (optional) wether to call simplify
+ * @author: Tobias Nickel
+ * @created: 06.04.2015
+ * I needed a small xmlparser chat can be used in a worker.
  */
-export declare function getElementById(S: string, id: string, simplify?: false): INode;
-export declare function getElementById(S: string, id: string, simplify: true): IAnyObject;
-
 /**
- * 
- * Also, this function will speed up your data processing immense.
- * as getElementBytId, it will only parse the requested elements,
- * not the rest.
- * 
- * @param S the xml string
- * @param className  the element's class for what you are interested
- * @param simplify (optional) wether to call simplify
- */
-export declare function getElementsByClassName(S: string, className: string, simplify?: false): [INode];
-export declare function getElementsByClassName(S: string, className: string, simplify: true): IAnyObject;
-
+ * @typedef tNode
+ * @property {string} tagName
+ * @property {object} attributes
+ * @property {tNode|string|number[]} children
+ **/
 /**
- * 
- * @param stream has extra event xml, that return parsed objects
+ * @typedef TParseOptions
+ * @property {number} [pos]
+ * @property {string[]} [noChildNodes]
+ * @property {boolean} [setPos]
+ * @property {boolean} [keepComments]
+ * @property {(a: tNode, b: tNode) => boolean} [filter]
  */
-export declare function parseStream(stream: string|stream.Stream): stream.Stream;
-
 /**
- * 
- * create transform Stream, that you can pipe buffer or strings to and get a stream of INodes
- * ```js
- * const xmlStream = fileReadStream.pipe(xml.transformStream(planetFilePreamble.length));
- * for await (const node of xmlStream) {
- *   // process node
- * }
- * ```
+ * parseXML / html into a DOM Object. with no validation and some failur tolerance
+ * @param {string} S your XML to parse
+ * @param {TParseOptions} [options]  all other options:
+ * @return {(tNode | string | number)[]}
  */
-export declare function transformStream(): stream.Transform;
+export function parse(S: string, options?: TParseOptions): (tNode | string | number)[];
+/**
+ * transform the DomObject to an object that is like the object of PHP`s simple_xmp_load_*() methods.
+ * this format helps you to write that is more likely to keep your program working, even if there a small changes in the XML schema.
+ * be aware, that it is not possible to reproduce the original xml from a simplified version, because the order of elements is not saved.
+ * therefore your program will be more flexible and easier to read.
+ *
+ * @param {tNode[]} children the childrenList
+ */
+export function simplify(children: tNode[]): {};
+/**
+ * similar to simplify, but lost less
+ *
+ * @param {tNode[]} children the childrenList
+ */
+export function simplifyLostLess(children: tNode[], parentAttributes?: {}): {};
+/**
+ * behaves the same way as Array.filter, if the filter method return true, the element is in the resultList
+ * @params children{Array} the children of a node
+ * @param f{function} the filter method
+ */
+export function filter(children: any, f: Function, dept?: number, path?: string): any[];
+/**
+ * stringify a previously parsed string object.
+ * this is useful,
+ *  1. to remove whitespace
+ * 2. to recreate xml data, with some changed data.
+ * @param {tNode} O the object to Stringify
+ */
+export function stringify(O: tNode): string;
+/**
+ * use this method to read the text content, of some node.
+ * It is great if you have mixed content like:
+ * this text has some <b>big</b> text and a <a href=''>link</a>
+ * @return {string}
+ */
+export function toContentString(tDom: any): string;
+export function getElementById(S: any, id: any, simplified: any): any;
+export function getElementsByClassName(S: any, classname: any, simplified: any): any;
+export function transformStream(offset: any, parseOptions: any): any;

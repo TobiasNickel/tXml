@@ -1,5 +1,7 @@
 test/
 txml2js/
+coverage/
+.nyc_output
 exampleObj.js
 test.js
 long.xml
