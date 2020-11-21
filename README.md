@@ -116,7 +116,7 @@ this method is used with the simplify parameter;
     }
 ```
 
-### **xml.simplifyListLess** *(tXml_DOM_Object)* 
+### **xml.simplifyLostLess** *(tXml_DOM_Object)* 
 Same purpose of simplify, to make the data easier accessible, but this version is not the same as in PHP simple_xml, but therefor, you do not lose any information. if there are attributes, you get an _attribute property, even if there is only one of a kind, it will be a list with one item, for consistent code.
 
 ### **xml.filter** *(tXml_DOM_Object, f)* 
