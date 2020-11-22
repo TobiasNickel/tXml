@@ -105,7 +105,9 @@ txml.parse(`<user is='great'>
 ```  
 
 ### **txml.simplify** *(tXml_DOM_Object)* 
-this method is used with the simplify parameter;
+Same purpose of simplify, to make the data easier accessible. It is modeled after PHP
+s [simplexml](https://www.php.net/manual/en/function.simplexml-load-string). You can quickly access properties. However, some attributes might be lost. Also some string values can be lost. For details see [Issue 19](https://github.com/TobiasNickel/tXml/issues/19).
+This method is used with the `simplify` parsing option.
 1. **tXml_DOM_Object** the object to simplify.
 ```js
 txml.simplify(txml.parse(`<user is='great'>
@@ -129,7 +131,7 @@ txml.simplify(txml.parse(`<user is='great'>
 ```
 
 ### **txml.simplifyLostLess** *(tXml_DOM_Object)* 
-Same purpose of simplify, to make the data easier accessible. This version is not the same as in PHP simple_xml. But therefor, you do not lose any information. If there are attributes, you get an _attribute property, even if there is only one of a kind, it will be an array with one item, for consistent code.
+This version is not the same as in PHP simple_xml. But therefor, you do not lose any information. If there are attributes, you get an _attribute property, even if there is only one of a kind, it will be an array with one item, for consistent code.
 
 ### **txml.filter** *(tXml_DOM_Object, f)* 
 This method is used with the filter parameter, it is used like Array.filter. But it will traverse the entire deep tree.
@@ -149,7 +151,6 @@ const dom = txml.parse(`
 </html>`);
 const styleElement = data.filter(dom, node=>node.tagName.toLowerCase() === 'style')[0];
 ```
-
 
 ### **txml.getElementById** (xml, id) 
 To find an element by ID. If you are only interested for the information on, a specific node, this is easy and fast, because not the entire xml text need to get parsed, but only the small section you are interested in.

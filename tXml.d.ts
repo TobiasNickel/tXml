@@ -8,6 +8,7 @@ export type TParseOptions = {
     noChildNodes?: string[];
     setPos?: boolean;
     keepComments?: boolean;
+    simplify?: boolean;
     filter?: (a: tNode, b: tNode) => boolean;
 };
 /**
@@ -27,6 +28,7 @@ export type TParseOptions = {
  * @property {string[]} [noChildNodes]
  * @property {boolean} [setPos]
  * @property {boolean} [keepComments]
+ * @property {boolean} [simplify]
  * @property {(a: tNode, b: tNode) => boolean} [filter]
  */
 /**

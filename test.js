@@ -275,7 +275,6 @@ assert.deepStrictEqual(tXml.simplifyLostLess(['1',2]), {}, 'ignore non objects')
 
 assert.deepStrictEqual(tXml.filter([{}],()=>true), [{}], 'allow nodes without children')
 
-
 // https://github.com/TobiasNickel/tXml/issues/14
 testAsync().catch(err=>console.log(err));
 async function testAsync(){

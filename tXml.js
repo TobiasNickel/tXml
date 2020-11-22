@@ -33,6 +33,7 @@ module.exports = {
  * @property {string[]} [noChildNodes]
  * @property {boolean} [setPos]
  * @property {boolean} [keepComments] 
+ * @property {boolean} [simplify]
  * @property {(a: tNode, b: tNode) => boolean} [filter]
  */
 
@@ -282,6 +283,10 @@ function parse(S, options) {
 
     if (options.filter) {
         out = filter(out, options.filter);
+    }
+
+    if (options.simplify) {
+        return simplify(Array.isArray(out) ? out : [out]);
     }
 
     if (options.setPos) {
