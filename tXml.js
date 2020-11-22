@@ -2,6 +2,17 @@
 // @output_file_name default.js
 // @compilation_level SIMPLE_OPTIMIZATIONS
 // ==/ClosureCompiler==
+module.exports = {
+    parse: parse,
+    simplify: simplify,
+    simplifyLostLess: simplifyLostLess,
+    filter: filter,
+    stringify: stringify,
+    toContentString: toContentString,
+    getElementById: getElementById,
+    getElementsByClassName: getElementsByClassName,
+    transformStream: transformStream,
+};
 
 /**
  * @author: Tobias Nickel
@@ -17,15 +28,21 @@
  **/
 
 /**
+ * @typedef TParseOptions
+ * @property {number} [pos]
+ * @property {string[]} [noChildNodes]
+ * @property {boolean} [setPos]
+ * @property {boolean} [keepComments] 
+ * @property {(a: tNode, b: tNode) => boolean} [filter]
+ */
+
+/**
  * parseXML / html into a DOM Object. with no validation and some failur tolerance
  * @param {string} S your XML to parse
- * @param options {object} all other options:
- * searchId {string} the id of a single element, that should be returned. using this will increase the speed rapidly
- * filter {function} filter method, as you know it from Array.filter. but is goes throw the DOM.
-
- * @return {tNode[]}
+ * @param {TParseOptions} [options]  all other options:
+ * @return {(tNode | string | number)[]}
  */
-function tXml(S, options) {
+function parse(S, options) {
     "use strict";
     options = options || {};
 
@@ -35,51 +52,61 @@ function tXml(S, options) {
     var openBracketCC = "<".charCodeAt(0);
     var closeBracket = ">";
     var closeBracketCC = ">".charCodeAt(0);
-    var minus = "-";
     var minusCC = "-".charCodeAt(0);
-    var slash = "/";
     var slashCC = "/".charCodeAt(0);
-    var exclamation = '!';
     var exclamationCC = '!'.charCodeAt(0);
-    var singleQuote = "'";
     var singleQuoteCC = "'".charCodeAt(0);
-    var doubleQuote = '"';
     var doubleQuoteCC = '"'.charCodeAt(0);
-    var openCornerBracket = '[';
     var openCornerBracketCC = '['.charCodeAt(0);
-    var closeCornerBracket = ']';
     var closeCornerBracketCC = ']'.charCodeAt(0);
     
 
     /**
      * parsing a list of entries
      */
-    function parseChildren() {
+    function parseChildren(tagName) {
         var children = [];
         while (S[pos]) {
             if (S.charCodeAt(pos) == openBracketCC) {
                 if (S.charCodeAt(pos + 1) === slashCC) {
+                    var closeStart= pos+2;
                     pos = S.indexOf(closeBracket, pos);
+                    
+                    var closeTag = S.substring(closeStart, pos)
+                    if (closeTag.indexOf(tagName) == -1) {
+                        var parsedText = S.substring(0, pos).split('\n');
+                        throw new Error(
+                            'Unexpected close tag\nLine: ' + (parsedText.length - 1) +
+                            '\nColumn: ' + (parsedText[parsedText.length - 1].length + 1) +
+                            '\nChar: ' + S[pos]
+                        );
+                    }
+
                     if (pos + 1) pos += 1
+
                     return children;
                 } else if (S.charCodeAt(pos + 1) === exclamationCC) {
                     if (S.charCodeAt(pos + 2) == minusCC) {
                         //comment support
+                        const startCommentPos = pos;
                         while (pos !== -1 && !(S.charCodeAt(pos) === closeBracketCC && S.charCodeAt(pos - 1) == minusCC && S.charCodeAt(pos - 2) == minusCC && pos != -1)) {
                             pos = S.indexOf(closeBracket, pos + 1);
                         }
                         if (pos === -1) {
                             pos = S.length
                         }
-                    }else if(
+                        if (options.keepComments === true) {
+                            children.push(S.substring(startCommentPos, pos + 1));
+                        }
+                    } else if (
                         S.charCodeAt(pos + 2) === openCornerBracketCC
                         && S.charCodeAt(pos + 8) === openCornerBracketCC
                         && S.substr(pos+3, 5).toLowerCase() === 'cdata'
-                    ){
+                    ) {
                         // cdata
-                        var cdataEndIndex = S.indexOf(']]>',pos)
+                        var cdataEndIndex = S.indexOf(']]>', pos);
                         if (cdataEndIndex==-1) {
-                            children.push(S.substr(pos+8));
+                            children.push(S.substr(pos+9));
                             pos=S.length;
                         } else {
                             children.push(S.substring(pos+9, cdataEndIndex));
@@ -88,16 +115,28 @@ function tXml(S, options) {
                         continue;
                     } else {
                         // doctypesupport
+                        const startDoctype = pos+1;
                         pos += 2;
-                        while (S.charCodeAt(pos) !== closeBracketCC && S[pos]) {
+                        var encapsuled = false;
+                        while ((S.charCodeAt(pos) !== closeBracketCC || encapsuled === true) && S[pos] ) {
+                            if (S.charCodeAt(pos) === openCornerBracketCC) {
+                                encapsuled = true;
+                            } else if (encapsuled===true && S.charCodeAt(pos) === closeCornerBracketCC) {
+                                encapsuled = false;
+                            }
                             pos++;
                         }
+                        children.push(S.substring(startDoctype, pos));
                     }
                     pos++;
                     continue;
                 }
                 var node = parseNode();
                 children.push(node);
+                if (node.tagName[0] === '?') {
+                    children.push(...node.children);
+                    node.children = [];
+                }
             } else {
                 var text = parseText()
                 if (text.trim().length > 0)
@@ -183,9 +222,11 @@ function tXml(S, options) {
                 pos = S.indexOf('</style>', pos);
                 children = [S.slice(start, pos)];
                 pos += 8;
-            } else if (NoChildNodes.indexOf(tagName) == -1) {
+            } else if (NoChildNodes.indexOf(tagName) === -1) {
                 pos++;
-                children = parseChildren(name);
+                children = parseChildren(tagName);
+            } else {
+                pos++
             }
         } else {
             pos++;
@@ -236,11 +277,11 @@ function tXml(S, options) {
     } else if (options.parseNode) {
         out = parseNode()
     } else {
-        out = parseChildren();
+        out = parseChildren('');
     }
 
     if (options.filter) {
-        out = tXml.filter(out, options.filter);
+        out = filter(out, options.filter);
     }
 
     if (options.setPos) {
@@ -258,7 +299,7 @@ function tXml(S, options) {
  *
  * @param {tNode[]} children the childrenList
  */
-tXml.simplify = function simplify(children) {
+function simplify(children) {
     var out = {};
     if (!children.length) {
         return '';
@@ -274,7 +315,7 @@ tXml.simplify = function simplify(children) {
         }
         if (!out[child.tagName])
             out[child.tagName] = [];
-        var kids = tXml.simplify(child.children);
+        var kids = simplify(child.children);
         out[child.tagName].push(kids);
         if (Object.keys(child.attributes).length) {
             kids._attributes = child.attributes;
@@ -296,10 +337,10 @@ tXml.simplify = function simplify(children) {
  *
  * @param {tNode[]} children the childrenList
  */ 
-tXml.simplifyLostLess = function simplify(children, parentAttributes={}) {
+function simplifyLostLess(children, parentAttributes={}) {
     var out = {};
     if (!children.length) {
-        return '';
+        return out;
     }
 
     if (children.length === 1 && typeof children[0] == 'string') {
@@ -315,7 +356,7 @@ tXml.simplifyLostLess = function simplify(children, parentAttributes={}) {
         }
         if (!out[child.tagName])
             out[child.tagName] = [];
-        var kids = tXml.simplifyLostLess(child.children||[], child.attributes);
+        var kids = simplifyLostLess(child.children||[], child.attributes);
         out[child.tagName].push(kids);
         if (Object.keys(child.attributes).length) {
             kids._attributes = child.attributes;
@@ -330,12 +371,12 @@ tXml.simplifyLostLess = function simplify(children, parentAttributes={}) {
  * @params children{Array} the children of a node
  * @param f{function} the filter method
  */
-tXml.filter = function(children, f, dept=0,path='') {
+function filter(children, f, dept=0,path='') {
     var out = [];
     children.forEach(function(child, i) {
         if (typeof(child) === 'object' && f(child, i, dept, path)) out.push(child);
         if (child.children) {
-            var kids = tXml.filter(child.children, f, dept+1, (path?path+'.':'')+i+'.'+child.tagName);
+            var kids = filter(child.children, f, dept+1, (path?path+'.':'')+i+'.'+child.tagName);
             out = out.concat(kids);
         }
     });
@@ -349,11 +390,11 @@ tXml.filter = function(children, f, dept=0,path='') {
  * 2. to recreate xml data, with some changed data.
  * @param {tNode} O the object to Stringify
  */
-tXml.stringify = function stringify(O) {
+function stringify(O) {
     var out = '';
 
     function writeChildren(O) {
-        if (O)
+        if (O) {
             for (var i = 0; i < O.length; i++) {
                 if (typeof O[i] == 'string') {
                     out += O[i].trim();
@@ -361,6 +402,7 @@ tXml.stringify = function stringify(O) {
                     writeNode(O[i]);
                 }
             }
+        }
     }
 
     function writeNode(N) {
@@ -390,86 +432,42 @@ tXml.stringify = function stringify(O) {
  * this text has some <b>big</b> text and a <a href=''>link</a>
  * @return {string}
  */
-tXml.toContentString = function(tDom) {
+function toContentString(tDom) {
     if (Array.isArray(tDom)) {
         var out = '';
         tDom.forEach(function(e) {
-            out += ' ' + tXml.toContentString(e);
+            out += ' ' + toContentString(e);
             out = out.trim();
         });
         return out;
     } else if (typeof tDom === 'object') {
-        return tXml.toContentString(tDom.children)
+        return toContentString(tDom.children)
     } else {
         return ' ' + tDom;
     }
 };
 
-tXml.getElementById = function(S, id, simplified) {
-    var out = tXml(S, {
+function getElementById(S, id, simplified) {
+    var out = parse(S, {
         attrValue: id
     });
     return simplified ? tXml.simplify(out) : out[0];
 };
 
-tXml.getElementsByClassName = function(S, classname, simplified) {
-    const out = tXml(S, {
+function getElementsByClassName(S, classname, simplified) {
+    const out = parse(S, {
         attrName: 'class',
         attrValue: '[a-zA-Z0-9- ]*' + classname + '[a-zA-Z0-9- ]*'
     });
     return simplified ? tXml.simplify(out) : out;
 };
 
-tXml.parseStream = function(stream, offset) {
-    if (typeof offset === 'string') {
-        offset = offset.length + 2;
-    }
-    if (typeof stream === 'string') {
-        var fs = require('fs');
-        stream = fs.createReadStream(stream, { start: offset });
-        offset = 0;
-    }
-
-    var position = offset;
-    var data = '';
-    stream.on('data', function(chunk) {
-        data += chunk;
-        var lastPos = 0;
-        do {
-            position = data.indexOf('<', position) + 1;
-            if(!position) {
-                position = lastPos;
-                return;
-            }
-            if (data[position + 1] === '/') {
-                position = position + 1;
-                lastPos = pos;
-                continue;
-            }
-            var res = tXml(data, { pos: position-1, parseNode: true, setPos: true });
-            position = res.pos;
-            if (position > (data.length - 1) || position < lastPos) {
-                data = data.slice(lastPos);
-                position = 0;
-                lastPos = 0;
-                return;
-            } else {
-                stream.emit('xml', res);
-                lastPos = position;
-            }
-        } while (1);
-    });
-    // stream.on('end', function() {
-    //     console.log('end')
-    // });
-    return stream;
-}
-
-tXml.transformStream = function (offset) {
+function transformStream(offset, parseOptions) {
+    if(!parseOptions) parseOptions = {};
     // require through here, so it will not get added to webpack/browserify
     const through2 = require('through2');
     if (typeof offset === 'string') {
-        offset = offset.length + 2;
+        offset = offset.length;
     }
 
     var position = offset || 0;
@@ -479,33 +477,36 @@ tXml.transformStream = function (offset) {
         var lastPos = 0;
         do {
             position = data.indexOf('<', position) + 1;
+            
             if (!position) {
                 position = lastPos;
                 return callback();;
             }
-            if (data[position + 1] === '/') {
+            if (data[position] === '/') {
                 position = position + 1;
-                lastPos = pos;
+                lastPos = position;
+                continue;
+            }
+            if (data[position] === '!' && data[position + 1] === '-' && data[position + 2] === '-') {
+                const commentEnd = data.indexOf('-->', position + 3);
+                if (commentEnd === -1) {
+                    data = data.slice(lastPos);
+                    position = 0;
+                    return callback();;
+                }
+
+                if(parseOptions.keepComments){
+                    this.push(data.substring(position-1, commentEnd+3));
+                }
+
+                position = commentEnd + 1;
+                lastPos = commentEnd;
                 continue;
             }
 
-            if (data[position + 0]==='!'
-                && data[position + 1] === '-'
-                && data[position + 2] === '-'
-            ) {
-                const commentEnd = data.indexOf('-->', position);
-                if(commentEnd !== -1){
-                    lastPos = position;
-                    position = commentEnd + 3;
-                    continue;
-                } else {
-                    position--;
-                    return callback();
-                }
-            }
-
-            var res = tXml(data, { pos: position - 1, parseNode: true, setPos: true });
+            var res = parse(data, {...parseOptions, pos: position - 1, parseNode: true, setPos: true });
             position = res.pos;
+            //console.log(res, res.pos)
             if (position > (data.length - 1) || position < lastPos) {
                 data = data.slice(lastPos);
                 position = 0;
@@ -515,38 +516,7 @@ tXml.transformStream = function (offset) {
                 lastPos = position;
             }
         } while (1);
-        callback();
     });
 
     return stream;
 }
-
-if ('object' === typeof module) {
-    module.exports = tXml;
-    tXml.xml = tXml;
-}
-//console.clear();
-//console.log('here:',tXml.getElementById('<some><xml id="test">dada</xml><that id="test">value</that></some>','test'));
-//console.log('here:',tXml.getElementsByClassName('<some><xml id="test" class="sdf test jsalf">dada</xml><that id="test">value</that></some>','test'));
-
-/*
-console.clear();
-tXml(d,'content');
- //some testCode
-var s = document.body.innerHTML.toLowerCase();
-var start = new Date().getTime();
-var o = tXml(s,'content');
-var end = new Date().getTime();
-//console.log(JSON.stringify(o,undefined,'\t'));
-console.log("MILLISECONDS",end-start);
-var nodeCount=document.querySelectorAll('*').length;
-console.log('node count',nodeCount);
-console.log("speed:",(1000/(end-start))*nodeCount,'Nodes / second')
-//console.log(JSON.stringify(tXml('<html><head><title>testPage</title></head><body><h1>TestPage</h1><p>this is a <b>test</b>page</p></body></html>'),undefined,'\t'));
-var p = new DOMParser();
-var s2='<body>'+s+'</body>'
-var start2= new Date().getTime();
-var o2 = p.parseFromString(s2,'text/html').querySelector('#content')
-var end2=new Date().getTime();
-console.log("MILLISECONDS",end2-start2);
-// */

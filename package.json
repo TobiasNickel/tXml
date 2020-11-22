@@ -1,10 +1,11 @@
 {
     "name": "txml",
-    "version": "3.2.5",
+    "version": "4.0.0",
     "description": "fastest XML DOM Parser for node/browser/worker",
     "main": "tXml.js",
     "scripts": {
-        "test": "node test.js"
+        "createTypes": "tsc --allowjs -d tXml.js",
+        "test": "node test.js --trace-warnings"
     },
     "repository": {
         "type": "git",
