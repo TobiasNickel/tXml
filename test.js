@@ -6,7 +6,8 @@ const files = {
 	commented: __dirname + '/test/examples/commented.svg',
 	commentOnly: __dirname + '/test/examples/commentOnly.svg',
 	twoComments: __dirname + '/test/examples/twocomments.svg',
-	tagesschauRSS: '/test/examples/tagesschau.rss',
+	tagesschauRSS: __dirname + '/test/examples/tagesschau.rss',
+	wordpadDocxDocument: __dirname+'/test/examples/wordpad.docx.document.xml',
 };
 
 assert(tXml, 'tXml is available');
@@ -132,7 +133,7 @@ assert.deepStrictEqual(x, xShould, 'find elements by class')
 
 // re-stringify an attribute without value
 var s = "<test><something flag></something></test>";
-assert(tXml.stringify(tXml.parse(s)) === s, 'problem with attribute without value');
+assert.deepStrictEqual(tXml.stringify(tXml.parse(s)), s, 'problem with attribute without value');
 assert(tXml.stringify(undefined) === '', 'stringify ignore null values');
 
 assert(tXml.toContentString(tXml.parse('<test>f<case number="2">f</case>f</test>')) === "f f  f")
@@ -274,6 +275,16 @@ assert.deepStrictEqual(tXml.simplifyLostLess(['3']), '3', 'string list becomes t
 assert.deepStrictEqual(tXml.simplifyLostLess(['1',2]), {}, 'ignore non objects')
 
 assert.deepStrictEqual(tXml.filter([{}],()=>true), [{}], 'allow nodes without children')
+
+const wordpadDoc = fs.readFileSync(files.wordpadDocxDocument).toString();
+assert.deepStrictEqual(
+	tXml.filter(
+		tXml.parse(wordpadDoc, { keepWhitespace: true }),
+		(n) => n.tagName === 'w:t'
+	)[1].children[0],
+	'    '
+);
+
 
 // https://github.com/TobiasNickel/tXml/issues/14
 testAsync().catch(err=>console.log(err));

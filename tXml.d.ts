@@ -1,13 +1,14 @@
 export type tNode = {
     tagName: string;
     attributes: object;
-    children: tNode | string | number[];
+    children: (tNode | string)[];
 };
 export type TParseOptions = {
     pos?: number;
     noChildNodes?: string[];
     setPos?: boolean;
     keepComments?: boolean;
+    keepWhitespace?: boolean;
     simplify?: boolean;
     filter?: (a: tNode, b: tNode) => boolean;
 };
@@ -20,7 +21,7 @@ export type TParseOptions = {
  * @typedef tNode
  * @property {string} tagName
  * @property {object} attributes
- * @property {tNode|string|number[]} children
+ * @property {(tNode|string)[]} children
  **/
 /**
  * @typedef TParseOptions
@@ -28,6 +29,7 @@ export type TParseOptions = {
  * @property {string[]} [noChildNodes]
  * @property {boolean} [setPos]
  * @property {boolean} [keepComments]
+ * @property {boolean} [keepWhitespace]
  * @property {boolean} [simplify]
  * @property {(a: tNode, b: tNode) => boolean} [filter]
  */
@@ -35,9 +37,9 @@ export type TParseOptions = {
  * parseXML / html into a DOM Object. with no validation and some failur tolerance
  * @param {string} S your XML to parse
  * @param {TParseOptions} [options]  all other options:
- * @return {(tNode | string | number)[]}
+ * @return {(tNode | string)[]}
  */
-export function parse(S: string, options?: TParseOptions): (tNode | string | number)[];
+export function parse(S: string, options?: TParseOptions): (tNode | string)[];
 /**
  * transform the DomObject to an object that is like the object of PHP`s simple_xmp_load_*() methods.
  * this format helps you to write that is more likely to keep your program working, even if there a small changes in the XML schema.

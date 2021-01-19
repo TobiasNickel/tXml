@@ -43,7 +43,7 @@ so, there are good reasons to give tXml.js a try.
 
 ## Try Online
 
-Try without installing online: http://tnickel.de/2017/04/02/txml-online
+Try without installing online: https://tnickel.de/2017/04/02/txml-online
 
 ## new in version 4
   - improved support for CDATA
@@ -69,6 +69,8 @@ and then in your script you require it by `const txml = require('txml');` or in 
     - **filter** a method, to filter for interesting nodes, use it like Array.filter.
     - **simplify** to simplify the object, to an easier access.
     - **pos** where to start parsing.
+    - **keepComments** if you want to keep comments in your data (keeped as string including `<!-- -->`) (default false)
+    - **keepWhitespace** keep whitespaces like spaces, tabs and line breaks as string content (default false)
     - **noChildNodes** array of nodes, that have no children and don't need to be closed. Default is working good for html. For example when parsing rss, the link tag is used to really provide an URL that the user can open. In html however a link text is used to bind css or other resource into the document. In HTML it does not need to get closed. so by default the noChildNodes containes the tagName 'link'. Same as 'img', 'br', 'input', 'meta', 'link'. That means: when parsing rss, it makes to set `noChildNodes` to [], an empty array.
 ```js
 txml.parse(`<user is='great'>
@@ -178,13 +180,17 @@ for await(let element of xmlStream) {
   // your logic here ...
 }
 ```
-The transform stream is great, because when your logic within the processing loop is slow, the file read stream will also run slower, and not fill up the RAM memory. For a more detailed explanation read [here](http://tnickel.de/2019/10/15/2019-10-for-async-on-nodejs-streams/)
+The transform stream is great, because when your logic within the processing loop is slow, the file read stream will also run slower, and not fill up the RAM memory. For a more detailed explanation read [here](https://tnickel.de/2019/10/15/2019-10-for-async-on-nodejs-streams/)
 
-
+## Changelog
+ - version 4.0.1
+   - fixed children type definition not to include number (issue #20)
+   - add `hr` to self closing tags
+   - new parser option `keepWhitespace` (issue #21)
 
 ## Developer
 
 ![Tobias Nickel](https://avatars1.githubusercontent.com/u/4189801?s=150)
 
-[Tobias Nickel](http://tnickel.de/) German software developer in Shanghai. 
+[Tobias Nickel](https://tnickel.de/) German software developer in Shanghai. 
 

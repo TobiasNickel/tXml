@@ -24,7 +24,7 @@ module.exports = {
  * @typedef tNode 
  * @property {string} tagName 
  * @property {object} attributes
- * @property {tNode|string|number[]} children 
+ * @property {(tNode|string)[]} children 
  **/
 
 /**
@@ -33,6 +33,7 @@ module.exports = {
  * @property {string[]} [noChildNodes]
  * @property {boolean} [setPos]
  * @property {boolean} [keepComments] 
+ * @property {boolean} [keepWhitespace]
  * @property {boolean} [simplify]
  * @property {(a: tNode, b: tNode) => boolean} [filter]
  */
@@ -41,13 +42,15 @@ module.exports = {
  * parseXML / html into a DOM Object. with no validation and some failur tolerance
  * @param {string} S your XML to parse
  * @param {TParseOptions} [options]  all other options:
- * @return {(tNode | string | number)[]}
+ * @return {(tNode | string)[]}
  */
 function parse(S, options) {
     "use strict";
     options = options || {};
 
     var pos = options.pos || 0;
+    var keepComments = !!options.keepComments;
+    var keepWhitespace = !!options.keepWhitespace
 
     var openBracket = "<";
     var openBracketCC = "<".charCodeAt(0);
@@ -96,7 +99,7 @@ function parse(S, options) {
                         if (pos === -1) {
                             pos = S.length
                         }
-                        if (options.keepComments === true) {
+                        if (keepComments) {
                             children.push(S.substring(startCommentPos, pos + 1));
                         }
                     } else if (
@@ -140,7 +143,7 @@ function parse(S, options) {
                 }
             } else {
                 var text = parseText()
-                if (text.trim().length > 0)
+                if (keepWhitespace || text.trim().length > 0)
                     children.push(text);
                 pos++;
             }
@@ -174,7 +177,7 @@ function parse(S, options) {
      *    is parsing a node, including tagName, Attributes and its children,
      * to parse children it uses the parseChildren again, that makes the parsing recursive
      */
-    var NoChildNodes = options.noChildNodes || ['img', 'br', 'input', 'meta', 'link'];
+    var NoChildNodes = options.noChildNodes || ['img', 'br', 'input', 'meta', 'link', 'hr'];
 
     function parseNode() {
         pos++;
@@ -420,6 +423,10 @@ function stringify(O) {
             } else {
                 out += ' ' + i + "='" + N.attributes[i].trim() + "'";
             }
+        }
+        if(N.tagName[0]==='?'){
+            out += '?>';
+            return;
         }
         out += '>';
         writeChildren(N.children);
