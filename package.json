@@ -2,8 +2,11 @@
     "name": "txml",
     "version": "4.0.1",
     "description": "fastest XML DOM Parser for node/browser/worker",
-    "main": "tXml.js",
+    "main": "dixt/txml.js",
     "scripts": {
+        "build": "rollup -c && npm run buildTypes || npm run buildMinTypes",
+        "buildTypes": "./node_modules/.bin/tsc --allowjs -d dist/txml.js",
+        "buildMinTypes": "./node_modules/.bin/tsc --allowjs -d dist/min.txml.js",
         "createTypes": "tsc --allowjs -d tXml.js",
         "test": "node test.js --trace-warnings"
     },
@@ -11,7 +14,9 @@
         "type": "git",
         "url": "git+https://github.com/TobiasNickel/tXml.git"
     },
-    "browser": { "fs": false },
+    "browser": {
+        "fs": false
+    },
     "keywords": [
         "xml",
         "parser",
@@ -26,9 +31,15 @@
     "bugs": {
         "url": "https://github.com/TobiasNickel/tXml/issues"
     },
-    "types":"tXml.d.ts",
+    "types": "dist/txml.d.ts",
     "homepage": "https://github.com/TobiasNickel/tXml#readme",
     "dependencies": {
         "through2": "^3.0.1"
+    },
+    "devDependencies": {
+        "rollup": "^2.44.0",
+        "rollup-plugin-commonjs": "^10.1.0",
+        "rollup-plugin-node-resolve": "^5.2.0",
+        "typescript": "^4.2.3"
     }
 }

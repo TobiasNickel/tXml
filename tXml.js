@@ -2,17 +2,17 @@
 // @output_file_name default.js
 // @compilation_level SIMPLE_OPTIMIZATIONS
 // ==/ClosureCompiler==
-module.exports = {
-    parse: parse,
-    simplify: simplify,
-    simplifyLostLess: simplifyLostLess,
-    filter: filter,
-    stringify: stringify,
-    toContentString: toContentString,
-    getElementById: getElementById,
-    getElementsByClassName: getElementsByClassName,
-    transformStream: transformStream,
-};
+// module.exports = {
+//     parse: parse,
+//     simplify: simplify,
+//     simplifyLostLess: simplifyLostLess,
+//     filter: filter,
+//     stringify: stringify,
+//     toContentString: toContentString,
+//     getElementById: getElementById,
+//     getElementsByClassName: getElementsByClassName,
+//     transformStream: transformStream,
+// };
 
 /**
  * @author: Tobias Nickel
@@ -44,7 +44,7 @@ module.exports = {
  * @param {TParseOptions} [options]  all other options:
  * @return {(tNode | string)[]}
  */
-function parse(S, options) {
+export function parse(S, options) {
     "use strict";
     options = options || {};
 
@@ -307,7 +307,7 @@ function parse(S, options) {
  *
  * @param {tNode[]} children the childrenList
  */
-function simplify(children) {
+export function simplify(children) {
     var out = {};
     if (!children.length) {
         return '';
@@ -345,7 +345,7 @@ function simplify(children) {
  *
  * @param {tNode[]} children the childrenList
  */ 
-function simplifyLostLess(children, parentAttributes={}) {
+export function simplifyLostLess(children, parentAttributes={}) {
     var out = {};
     if (!children.length) {
         return out;
@@ -379,7 +379,7 @@ function simplifyLostLess(children, parentAttributes={}) {
  * @params children{Array} the children of a node
  * @param f{function} the filter method
  */
-function filter(children, f, dept=0,path='') {
+export function filter(children, f, dept=0,path='') {
     var out = [];
     children.forEach(function(child, i) {
         if (typeof(child) === 'object' && f(child, i, dept, path)) out.push(child);
@@ -398,7 +398,7 @@ function filter(children, f, dept=0,path='') {
  * 2. to recreate xml data, with some changed data.
  * @param {tNode} O the object to Stringify
  */
-function stringify(O) {
+export function stringify(O) {
     var out = '';
 
     function writeChildren(O) {
@@ -444,7 +444,7 @@ function stringify(O) {
  * this text has some <b>big</b> text and a <a href=''>link</a>
  * @return {string}
  */
-function toContentString(tDom) {
+export function toContentString(tDom) {
     if (Array.isArray(tDom)) {
         var out = '';
         tDom.forEach(function(e) {
@@ -459,76 +459,17 @@ function toContentString(tDom) {
     }
 };
 
-function getElementById(S, id, simplified) {
+export function getElementById(S, id, simplified) {
     var out = parse(S, {
         attrValue: id
     });
     return simplified ? tXml.simplify(out) : out[0];
 };
 
-function getElementsByClassName(S, classname, simplified) {
+export function getElementsByClassName(S, classname, simplified) {
     const out = parse(S, {
         attrName: 'class',
         attrValue: '[a-zA-Z0-9- ]*' + classname + '[a-zA-Z0-9- ]*'
     });
     return simplified ? tXml.simplify(out) : out;
 };
-
-function transformStream(offset, parseOptions) {
-    if(!parseOptions) parseOptions = {};
-    // require through here, so it will not get added to webpack/browserify
-    const through2 = require('through2');
-    if (typeof offset === 'string') {
-        offset = offset.length;
-    }
-
-    var position = offset || 0;
-    var data = '';
-    const stream = through2({ readableObjectMode: true }, function (chunk, enc, callback) {
-        data += chunk;
-        var lastPos = 0;
-        do {
-            position = data.indexOf('<', position) + 1;
-            
-            if (!position) {
-                position = lastPos;
-                return callback();;
-            }
-            if (data[position] === '/') {
-                position = position + 1;
-                lastPos = position;
-                continue;
-            }
-            if (data[position] === '!' && data[position + 1] === '-' && data[position + 2] === '-') {
-                const commentEnd = data.indexOf('-->', position + 3);
-                if (commentEnd === -1) {
-                    data = data.slice(lastPos);
-                    position = 0;
-                    return callback();;
-                }
-
-                if(parseOptions.keepComments){
-                    this.push(data.substring(position-1, commentEnd+3));
-                }
-
-                position = commentEnd + 1;
-                lastPos = commentEnd;
-                continue;
-            }
-
-            var res = parse(data, {...parseOptions, pos: position - 1, parseNode: true, setPos: true });
-            position = res.pos;
-            //console.log(res, res.pos)
-            if (position > (data.length - 1) || position < lastPos) {
-                data = data.slice(lastPos);
-                position = 0;
-                return callback();;
-            } else {
-                this.push(res);
-                lastPos = position;
-            }
-        } while (1);
-    });
-
-    return stream;
-}

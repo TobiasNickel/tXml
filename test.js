@@ -1,4 +1,4 @@
-const tXml = require('./tXml');
+const tXml = require('./dist/txml');
 const assert = require('assert');
 const fs = require('fs');
 
@@ -275,6 +275,7 @@ assert.deepStrictEqual(tXml.simplifyLostLess(['3']), '3', 'string list becomes t
 assert.deepStrictEqual(tXml.simplifyLostLess(['1',2]), {}, 'ignore non objects')
 
 assert.deepStrictEqual(tXml.filter([{}],()=>true), [{}], 'allow nodes without children')
+
 
 const wordpadDoc = fs.readFileSync(files.wordpadDocxDocument).toString();
 assert.deepStrictEqual(
