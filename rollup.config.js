@@ -1,4 +1,4 @@
-const baseConfig = {
+const config = {
   dir: 'dist',
   sanitizeFileName: (f) => f.includes('tXml') ? f.toLowerCase() : f,
 };
@@ -7,12 +7,12 @@ export default {
   input: ['index.js', 'tXml.js', 'transformStream.js'],
   output: [
     {
-      ...baseConfig,
+      ...config,
       format: 'cjs',
       entryFileNames: '[name].js',
     },
     {
-      ...baseConfig,
+      ...config,
       format: 'esm',
       entryFileNames: '[name].mjs',
     },

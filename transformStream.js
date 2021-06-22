@@ -1,5 +1,5 @@
 import {parse} from './tXml.js'
-const through2 = require('through2');
+import through2 from 'through2';
 
 export function transformStream(offset, parseOptions) {
     if(!parseOptions) parseOptions = {};
