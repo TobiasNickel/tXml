@@ -1,35 +1,23 @@
+const baseConfig = {
+  dir: 'dist',
+  sanitizeFileName: (f) => f.includes('tXml') ? f.toLowerCase() : f,
+};
 
-import resolve from 'rollup-plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
-
-export default [
-  {
-    input: './index.js',
-    
-    output: {
-      file: 'dist/txml.js',
-      format: 'cjs'
+export default {
+  input: ['index.js', 'tXml.js', 'transformStream.js'],
+  output: [
+    {
+      ...baseConfig,
+      format: 'cjs',
+      entryFileNames: '[name].js',
     },
-    plugins: [
-      resolve(),
-      commonjs()
-    ],  
-    external: [
-      'through2'
-    ]
-  },{
-    input: './tXml.js',
-    
-    output: {
-      file: 'dist/min.txml.js',
-      format: 'cjs'
+    {
+      ...baseConfig,
+      format: 'esm',
+      entryFileNames: '[name].mjs',
     },
-    plugins: [
-      resolve(),
-      commonjs()
-    ],  
-    external: [
-      'through2'
-    ]
-  },
-];
+  ],
+  external: [
+    'through2'
+  ]
+};

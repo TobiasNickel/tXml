@@ -2,14 +2,17 @@
     "name": "txml",
     "version": "4.0.1",
     "description": "fastest XML DOM Parser for node/browser/worker",
-    "main": "dixt/txml.js",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
     "scripts": {
-        "build": "rollup -c && npm run buildTypes || npm run buildMinTypes",
-        "buildTypes": "./node_modules/.bin/tsc --allowjs -d dist/txml.js",
-        "buildMinTypes": "./node_modules/.bin/tsc --allowjs -d dist/min.txml.js",
+        "build": "rollup -c && npm run buildTypes",
+        "buildTypes": "tsc --allowjs --emitDeclarationOnly -d dist/index.js",
         "createTypes": "tsc --allowjs -d tXml.js",
         "test": "node test.js --trace-warnings"
     },
+    "files": [
+        "dist"
+    ],
     "repository": {
         "type": "git",
         "url": "git+https://github.com/TobiasNickel/tXml.git"
@@ -26,6 +29,20 @@
         "fast",
         "simple"
     ],
+    "exports": {
+        ".": {
+            "require": "./dist/index.js",
+            "import": "./dist/index.mjs"
+        },
+        "./txml": {
+            "require": "./dist/txml.js",
+            "import": "./dist/txml.mjs"
+        },
+        "./transformStream": {
+            "require": "./dist/transformStream.js",
+            "import": "./dist/transformStream.mjs"
+        }
+    },
     "author": "Tobias Nickel",
     "license": "MIT",
     "bugs": {
@@ -37,9 +54,7 @@
         "through2": "^3.0.1"
     },
     "devDependencies": {
-        "rollup": "^2.44.0",
-        "rollup-plugin-commonjs": "^10.1.0",
-        "rollup-plugin-node-resolve": "^5.2.0",
+        "rollup": "^2.52.2",
         "typescript": "^4.2.3"
     }
 }
