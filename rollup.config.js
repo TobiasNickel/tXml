@@ -1,5 +1,6 @@
 const config = {
   dir: 'dist',
+  // Small hack to lowercase tXml in bundle
   sanitizeFileName: (f) => f.includes('tXml') ? f.toLowerCase() : f,
 };
 
