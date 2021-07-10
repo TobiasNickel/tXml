@@ -45,7 +45,7 @@
  * @return {(tNode | string)[]}
  */
 export function parse(S, options) {
-    "use strict";
+    "txml";
     options = options || {};
 
     var pos = options.pos || 0;
@@ -142,9 +142,17 @@ export function parse(S, options) {
                     node.children = [];
                 }
             } else {
-                var text = parseText()
-                if (keepWhitespace || text.trim().length > 0)
-                    children.push(text);
+                var text = parseText();
+                if (keepWhitespace) {
+                    if (text.length > 0) {
+                        children.push(text);
+                    }
+                } else {
+                    var trimmed = text.trim();
+                    if (trimmed.length > 0) {
+                        children.push(trimmed);
+                    }
+                }
                 pos++;
             }
         }
