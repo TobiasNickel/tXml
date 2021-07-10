@@ -1,6 +1,6 @@
 {
     "name": "txml",
-    "version": "4.0.1",
+    "version": "5.0.0",
     "description": "fastest XML DOM Parser for node/browser/worker",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
@@ -11,7 +11,8 @@
         "test": "node test.js --trace-warnings"
     },
     "files": [
-        "dist"
+        "dist",
+        "txml.min.js"
     ],
     "repository": {
         "type": "git",
@@ -55,6 +56,7 @@
     },
     "devDependencies": {
         "rollup": "^2.52.2",
+        "rollup-plugin-terser": "^7.0.2",
         "typescript": "^4.2.3"
     }
 }

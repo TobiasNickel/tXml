@@ -55,7 +55,7 @@ Try without installing online: https://tnickel.de/2017/04/02/txml-online
   - more stable auto generated typescript definitions.
 
 ## Installation
-In browser you load it how ever you want. For example as tag: <script src="tXml.min.js"></script>.
+In browser you load it how ever you want. For example as tag: <script src="dist/txml.min.js"></script>.
 
 In node and browserify, run **"npm install txml"** in your project
 and then in your script you require it by `const txml = require('txml');` or in typescript `import * as txml from 'txml';`.
