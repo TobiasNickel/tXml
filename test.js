@@ -1,4 +1,4 @@
-const tXml = require('./dist/txml');
+const tXml = require('.');
 const assert = require('assert');
 const fs = require('fs');
 
