@@ -49,7 +49,7 @@
     "bugs": {
         "url": "https://github.com/TobiasNickel/tXml/issues"
     },
-    "types": "dist/txml.d.ts",
+    "types": "dist/index.d.ts",
     "homepage": "https://github.com/TobiasNickel/tXml#readme",
     "dependencies": {
         "through2": "^3.0.1"

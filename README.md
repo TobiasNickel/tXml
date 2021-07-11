@@ -60,6 +60,8 @@ In browser you load it how ever you want. For example as tag: <script src="dist/
 In node and browserify, run **"npm install txml"** in your project
 and then in your script you require it by `const txml = require('txml');` or in typescript `import * as txml from 'txml';`.
 
+For specially small builds using modern module bundlers like rollup or webpack you can import `txml/txml` or `txml/dist/txml`. This will not add the transformStream into the bundle and with that exclude the Node.js files.
+
 ## Methods
 
 ### **txml.parse** *(xmlString, options)*
@@ -69,9 +71,9 @@ and then in your script you require it by `const txml = require('txml');` or in 
     - **filter** a method, to filter for interesting nodes, use it like Array.filter.
     - **simplify** to simplify the object, to an easier access.
     - **pos** where to start parsing.
-    - **keepComments** if you want to keep comments in your data (keeped as string including `<!-- -->`) (default false)
-    - **keepWhitespace** keep whitespaces like spaces, tabs and line breaks as string content (default false)
-    - **noChildNodes** array of nodes, that have no children and don't need to be closed. Default is working good for html. For example when parsing rss, the link tag is used to really provide an URL that the user can open. In html however a link text is used to bind css or other resource into the document. In HTML it does not need to get closed. so by default the noChildNodes containes the tagName 'link'. Same as 'img', 'br', 'input', 'meta', 'link'. That means: when parsing rss, it makes to set `noChildNodes` to [], an empty array.
+    - **keepComments** if you want to keep comments in your data (kept as string including `<!-- -->`) (default false)
+    - **keepWhitespace** keep whitespace like spaces, tabs and line breaks as string content (default false)
+    - **noChildNodes** array of nodes, that have no children and don't need to be closed. Default is working good for html. For example when parsing rss, the link tag is used to really provide an URL that the user can open. In html however a link text is used to bind css or other resource into the document. In HTML it does not need to get closed. so by default the noChildNodes contains the tagName 'link'. Same as 'img', 'br', 'input', 'meta', 'link'. That means: when parsing rss, it makes to set `noChildNodes` to [], an empty array.
 ```js
 txml.parse(`<user is='great'>
     <name>Tobias</name>
@@ -183,6 +185,9 @@ for await(let element of xmlStream) {
 The transform stream is great, because when your logic within the processing loop is slow, the file read stream will also run slower, and not fill up the RAM memory. For a more detailed explanation read [here](https://tnickel.de/2019/10/15/2019-10-for-async-on-nodejs-streams/)
 
 ## Changelog
+ - version 5.0.0
+   - improved handling of whitespace (issue #21)
+   - automated build with rollup (PR #23)
  - version 4.0.1
    - fixed children type definition not to include number (issue #20)
    - add `hr` to self closing tags
