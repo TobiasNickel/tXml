@@ -333,7 +333,8 @@ export function simplify(children) {
             out[child.tagName] = [];
         var kids = simplify(child.children);
         out[child.tagName].push(kids);
-        if (Object.keys(child.attributes).length) {
+        if (Object.keys(child.attributes).length && typeof kids !=='string') {
+            console.log('kids', kids)
             kids._attributes = child.attributes;
         }
     });

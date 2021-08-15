@@ -286,6 +286,8 @@ assert.deepStrictEqual(
 	'    '
 );
 
+//this should run without Error: Issue #24
+tXml.parse('<?xml version="1.0"?><methodCall>TEST</methodCall>', { simplify: true });
 
 // https://github.com/TobiasNickel/tXml/issues/14
 testAsync().catch(err=>console.log(err));
