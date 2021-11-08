@@ -185,6 +185,9 @@ for await(let element of xmlStream) {
 The transform stream is great, because when your logic within the processing loop is slow, the file read stream will also run slower, and not fill up the RAM memory. For a more detailed explanation read [here](https://tnickel.de/2019/10/15/2019-10-for-async-on-nodejs-streams/)
 
 ## Changelog
+ - version 5.1.0
+   - export ./* in package.json to allow older bundlers to import sub path directly.
+   ` import { parse } from 'txml/dist/txml.mjs'; `
  - version 5.0.1
    - fix simplify empty objects (issue #24)
  - version 5.0.0

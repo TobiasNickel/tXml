@@ -1,17 +1,3 @@
-export type tNode = {
-    tagName: string;
-    attributes: object;
-    children: (tNode | string)[];
-};
-export type TParseOptions = {
-    pos?: number;
-    noChildNodes?: string[];
-    setPos?: boolean;
-    keepComments?: boolean;
-    keepWhitespace?: boolean;
-    simplify?: boolean;
-    filter?: (a: tNode, b: tNode) => boolean;
-};
 /**
  * @author: Tobias Nickel
  * @created: 06.04.2015
@@ -78,4 +64,17 @@ export function stringify(O: tNode): string;
 export function toContentString(tDom: any): string;
 export function getElementById(S: any, id: any, simplified: any): any;
 export function getElementsByClassName(S: any, classname: any, simplified: any): any;
-export function transformStream(offset: any, parseOptions: any): any;
+export type tNode = {
+    tagName: string;
+    attributes: object;
+    children: (tNode | string)[];
+};
+export type TParseOptions = {
+    pos?: number;
+    noChildNodes?: string[];
+    setPos?: boolean;
+    keepComments?: boolean;
+    keepWhitespace?: boolean;
+    simplify?: boolean;
+    filter?: (a: tNode, b: tNode) => boolean;
+};
