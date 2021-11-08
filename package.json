@@ -42,7 +42,8 @@
         "./transformStream": {
             "require": "./dist/transformStream.js",
             "import": "./dist/transformStream.mjs"
-        }
+        },
+        "./*": "./*"
     },
     "author": "Tobias Nickel",
     "license": "MIT",
