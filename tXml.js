@@ -63,7 +63,7 @@ export function parse(S, options) {
     var doubleQuoteCC = '"'.charCodeAt(0);
     var openCornerBracketCC = '['.charCodeAt(0);
     var closeCornerBracketCC = ']'.charCodeAt(0);
-    
+
 
     /**
      * parsing a list of entries
@@ -73,9 +73,9 @@ export function parse(S, options) {
         while (S[pos]) {
             if (S.charCodeAt(pos) == openBracketCC) {
                 if (S.charCodeAt(pos + 1) === slashCC) {
-                    var closeStart= pos+2;
+                    var closeStart = pos + 2;
                     pos = S.indexOf(closeBracket, pos);
-                    
+
                     var closeTag = S.substring(closeStart, pos)
                     if (closeTag.indexOf(tagName) == -1) {
                         var parsedText = S.substring(0, pos).split('\n');
@@ -103,29 +103,29 @@ export function parse(S, options) {
                             children.push(S.substring(startCommentPos, pos + 1));
                         }
                     } else if (
-                        S.charCodeAt(pos + 2) === openCornerBracketCC
-                        && S.charCodeAt(pos + 8) === openCornerBracketCC
-                        && S.substr(pos+3, 5).toLowerCase() === 'cdata'
+                        S.charCodeAt(pos + 2) === openCornerBracketCC &&
+                        S.charCodeAt(pos + 8) === openCornerBracketCC &&
+                        S.substr(pos + 3, 5).toLowerCase() === 'cdata'
                     ) {
                         // cdata
                         var cdataEndIndex = S.indexOf(']]>', pos);
-                        if (cdataEndIndex==-1) {
-                            children.push(S.substr(pos+9));
-                            pos=S.length;
+                        if (cdataEndIndex == -1) {
+                            children.push(S.substr(pos + 9));
+                            pos = S.length;
                         } else {
-                            children.push(S.substring(pos+9, cdataEndIndex));
+                            children.push(S.substring(pos + 9, cdataEndIndex));
                             pos = cdataEndIndex + 3;
                         }
                         continue;
                     } else {
                         // doctypesupport
-                        const startDoctype = pos+1;
+                        const startDoctype = pos + 1;
                         pos += 2;
                         var encapsuled = false;
-                        while ((S.charCodeAt(pos) !== closeBracketCC || encapsuled === true) && S[pos] ) {
+                        while ((S.charCodeAt(pos) !== closeBracketCC || encapsuled === true) && S[pos]) {
                             if (S.charCodeAt(pos) === openCornerBracketCC) {
                                 encapsuled = true;
-                            } else if (encapsuled===true && S.charCodeAt(pos) === closeCornerBracketCC) {
+                            } else if (encapsuled === true && S.charCodeAt(pos) === closeCornerBracketCC) {
                                 encapsuled = false;
                             }
                             pos++;
@@ -256,7 +256,7 @@ export function parse(S, options) {
 
     function parseString() {
         var startChar = S[pos];
-        var startpos = pos+1;
+        var startpos = pos + 1;
         pos = S.indexOf(startChar, startpos)
         return S.slice(startpos, pos);
     }
@@ -333,8 +333,7 @@ export function simplify(children) {
             out[child.tagName] = [];
         var kids = simplify(child.children);
         out[child.tagName].push(kids);
-        if (Object.keys(child.attributes).length && typeof kids !=='string') {
-            console.log('kids', kids)
+        if (Object.keys(child.attributes).length && typeof kids !== 'string') {
             kids._attributes = child.attributes;
         }
     });
@@ -353,8 +352,8 @@ export function simplify(children) {
  * similar to simplify, but lost less
  *
  * @param {tNode[]} children the childrenList
- */ 
-export function simplifyLostLess(children, parentAttributes={}) {
+ */
+export function simplifyLostLess(children, parentAttributes = {}) {
     var out = {};
     if (!children.length) {
         return out;
@@ -364,7 +363,7 @@ export function simplifyLostLess(children, parentAttributes={}) {
         return Object.keys(parentAttributes).length ? {
             _attributes: parentAttributes,
             value: children[0]
-        } :children[0];
+        } : children[0];
     }
     // map each object
     children.forEach(function(child) {
@@ -373,7 +372,7 @@ export function simplifyLostLess(children, parentAttributes={}) {
         }
         if (!out[child.tagName])
             out[child.tagName] = [];
-        var kids = simplifyLostLess(child.children||[], child.attributes);
+        var kids = simplifyLostLess(child.children || [], child.attributes);
         out[child.tagName].push(kids);
         if (Object.keys(child.attributes).length) {
             kids._attributes = child.attributes;
@@ -388,12 +387,12 @@ export function simplifyLostLess(children, parentAttributes={}) {
  * @params children{Array} the children of a node
  * @param f{function} the filter method
  */
-export function filter(children, f, dept=0,path='') {
+export function filter(children, f, dept = 0, path = '') {
     var out = [];
     children.forEach(function(child, i) {
         if (typeof(child) === 'object' && f(child, i, dept, path)) out.push(child);
         if (child.children) {
-            var kids = filter(child.children, f, dept+1, (path?path+'.':'')+i+'.'+child.tagName);
+            var kids = filter(child.children, f, dept + 1, (path ? path + '.' : '') + i + '.' + child.tagName);
             out = out.concat(kids);
         }
     });
@@ -433,7 +432,7 @@ export function stringify(O) {
                 out += ' ' + i + "='" + N.attributes[i].trim() + "'";
             }
         }
-        if(N.tagName[0]==='?'){
+        if (N.tagName[0] === '?') {
             out += '?>';
             return;
         }
