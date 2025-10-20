@@ -6,7 +6,7 @@
     "module": "dist/index.mjs",
     "scripts": {
         "build": "rollup -c && npm run buildTypes",
-        "buildTypes": "tsc --allowjs --emitDeclarationOnly -d dist/index.js",
+        "buildTypes": "tsc --allowjs --emitDeclarationOnly -d index.js transformStream.js tXml.js --outDir ./dist",
         "createTypes": "tsc --allowjs -d tXml.js",
         "test": "node test.js --trace-warnings"
     },
