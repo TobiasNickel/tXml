@@ -1,12 +1,29 @@
+# Source files (only publish dist/)
+src/
+examples/
 test/
 txml2js/
+
+# Build config
+rollup.config.js
+tsconfig.json
+
+# Documentation (keep README, LICENSE, MIGRATION)
+README_NEW.md
+IMPLEMENTATION_SUMMARY.md
+project.md
+
+# Development files
 coverage/
 .nyc_output
-exampleObj.js
-test.js
 long.xml
-writeLongxml.js
-transformPlanet.js
-testStream.js
-transformPlanet.js
-rollup.config.js
+*.log
+.git
+.gitignore
+
+# Keep what we want published:
+# dist/
+# README.md
+# LICENSE
+# MIGRATION.md
+# package.json

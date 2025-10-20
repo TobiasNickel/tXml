@@ -1,48 +1,14 @@
-// ==ClosureCompiler==
-// @output_file_name default.js
-// @compilation_level SIMPLE_OPTIMIZATIONS
-// ==/ClosureCompiler==
-// module.exports = {
-//     parse: parse,
-//     simplify: simplify,
-//     simplifyLostLess: simplifyLostLess,
-//     filter: filter,
-//     stringify: stringify,
-//     toContentString: toContentString,
-//     getElementById: getElementById,
-//     getElementsByClassName: getElementsByClassName,
-//     transformStream: transformStream,
-// };
-
 /**
  * @author: Tobias Nickel
  * @created: 06.04.2015
- * I needed a small xmlparser chat can be used in a worker.
+ * I needed a small xmlparser that can be used in a worker.
  */
 
 /**
- * @typedef tNode 
- * @property {string} tagName 
- * @property {object} attributes
- * @property {(tNode|string)[]} children 
- **/
-
-/**
- * @typedef TParseOptions
- * @property {number} [pos]
- * @property {string[]} [noChildNodes]
- * @property {boolean} [setPos]
- * @property {boolean} [keepComments] 
- * @property {boolean} [keepWhitespace]
- * @property {boolean} [simplify]
- * @property {(a: tNode, b: tNode) => boolean} [filter]
- */
-
-/**
- * parseXML / html into a DOM Object. with no validation and some failur tolerance
+ * parseXML / html into a DOM Object. with no validation and some failure tolerance
  * @param {string} S your XML to parse
- * @param {TParseOptions} [options]  all other options:
- * @return {(tNode | string)[]}
+ * @param {import('./tXml.d.ts').ParseOptions} [options] all other options:
+ * @return {(import('./tXml.d.ts').TNode | string)[] | any}
  */
 export function parse(S, options) {
     "txml";
@@ -67,6 +33,8 @@ export function parse(S, options) {
 
     /**
      * parsing a list of entries
+     * @param {string} tagName
+     * @returns {(import('./tXml.d.ts').TNode | string)[]}
      */
     function parseChildren(tagName) {
         var children = [];
@@ -161,6 +129,7 @@ export function parse(S, options) {
 
     /**
      *    returns the text outside of texts until the first '<'
+     * @returns {string}
      */
     function parseText() {
         var start = pos;
@@ -171,6 +140,7 @@ export function parse(S, options) {
     }
     /**
      *    returns text until the first nonAlphabetic letter
+     * @returns {string}
      */
     var nameSpacer = '\r\n\t>/= ';
 
@@ -184,13 +154,16 @@ export function parse(S, options) {
     /**
      *    is parsing a node, including tagName, Attributes and its children,
      * to parse children it uses the parseChildren again, that makes the parsing recursive
+     * @returns {import('./tXml.d.ts').TNode}
      */
     var NoChildNodes = options.noChildNodes || ['img', 'br', 'input', 'meta', 'link', 'hr'];
 
     function parseNode() {
         pos++;
         const tagName = parseName();
+        /** @type {Record<string, string | null>} */
         const attributes = {};
+        /** @type {(import('./tXml.d.ts').TNode | string)[]} */
         let children = [];
 
         // parsing attributes
@@ -205,8 +178,10 @@ export function parse(S, options) {
                     pos++;
                     code = S.charCodeAt(pos);
                 }
+                /** @type {string | null} */
+                var value;
                 if (code === singleQuoteCC || code === doubleQuoteCC) {
-                    var value = parseString();
+                    value = parseString();
                     if (pos === -1) {
                         return {
                             tagName,
@@ -252,6 +227,7 @@ export function parse(S, options) {
 
     /**
      *    is parsing a string, that starts with a char and with the same usually  ' or "
+     * @returns {string}
      */
 
     function parseString() {
@@ -262,9 +238,11 @@ export function parse(S, options) {
     }
 
     /**
-     *
+     * Find elements by attribute name and value using regex
+     * @returns {number}
      */
     function findElements() {
+        if (!options || !options.attrName || !options.attrValue) return -1;
         var r = new RegExp('\\s' + options.attrName + '\\s*=[\'"]' + options.attrValue + '[\'"]').exec(S)
         if (r) {
             return r.index;
@@ -273,10 +251,12 @@ export function parse(S, options) {
         }
     }
 
-    var out = null;
+    /** @type {(import('./tXml.d.ts').TNode | string)[] | import('./tXml.d.ts').TNode} */
+    var out;
+    
     if (options.attrValue !== undefined) {
         options.attrName = options.attrName || 'id';
-        var out = [];
+        out = [];
 
         while ((pos = findElements()) !== -1) {
             pos = S.lastIndexOf('<', pos);
@@ -292,31 +272,38 @@ export function parse(S, options) {
         out = parseChildren('');
     }
 
-    if (options.filter) {
+    if (options.filter && Array.isArray(out)) {
         out = filter(out, options.filter);
     }
 
     if (options.simplify) {
-        return simplify(Array.isArray(out) ? out : [out]);
+        const arrOut = Array.isArray(out) ? out : [out];
+        // @ts-ignore - simplify returns different type structure
+        return simplify(arrOut);
     }
 
-    if (options.setPos) {
+    if (options.setPos && typeof out === 'object' && !Array.isArray(out)) {
+        // @ts-ignore - adding pos property dynamically
         out.pos = pos;
     }
 
+    // @ts-ignore - return type varies based on options
     return out;
 }
 
 /**
- * transform the DomObject to an object that is like the object of PHP`s simple_xmp_load_*() methods.
- * this format helps you to write that is more likely to keep your program working, even if there a small changes in the XML schema.
+ * transform the DomObject to an object that is like the object of PHP`s simple_xml_load_*() methods.
+ * this format helps you to write code that is more likely to keep your program working, even if there are small changes in the XML schema.
  * be aware, that it is not possible to reproduce the original xml from a simplified version, because the order of elements is not saved.
  * therefore your program will be more flexible and easier to read.
  *
- * @param {tNode[]} children the childrenList
+ * @param {(import('./tXml.d.ts').TNode | string)[]} children the childrenList
+ * @returns {Record<string, any> | string}
  */
 export function simplify(children) {
+    /** @type {Record<string, any>} */
     var out = {};
+    
     if (!children.length) {
         return '';
     }
@@ -324,6 +311,7 @@ export function simplify(children) {
     if (children.length === 1 && typeof children[0] == 'string') {
         return children[0];
     }
+    
     // map each object
     children.forEach(function(child) {
         if (typeof child !== 'object') {
@@ -333,7 +321,7 @@ export function simplify(children) {
             out[child.tagName] = [];
         var kids = simplify(child.children);
         out[child.tagName].push(kids);
-        if (Object.keys(child.attributes).length && typeof kids !== 'string') {
+        if (Object.keys(child.attributes).length && typeof kids === 'object' && !Array.isArray(kids)) {
             kids._attributes = child.attributes;
         }
     });
@@ -345,16 +333,20 @@ export function simplify(children) {
     }
 
     return out;
-};
+}
 
 
 /**
  * similar to simplify, but lost less
  *
- * @param {tNode[]} children the childrenList
+ * @param {(import('./tXml.d.ts').TNode | string)[]} children the childrenList
+ * @param {Record<string, string | null>} [parentAttributes]
+ * @returns {Record<string, any> | string | {_attributes: Record<string, string | null>, value: string}}
  */
 export function simplifyLostLess(children, parentAttributes = {}) {
+    /** @type {Record<string, any>} */
     var out = {};
+    
     if (!children.length) {
         return out;
     }
@@ -365,6 +357,7 @@ export function simplifyLostLess(children, parentAttributes = {}) {
             value: children[0]
         } : children[0];
     }
+    
     // map each object
     children.forEach(function(child) {
         if (typeof child !== 'object') {
@@ -374,62 +367,80 @@ export function simplifyLostLess(children, parentAttributes = {}) {
             out[child.tagName] = [];
         var kids = simplifyLostLess(child.children || [], child.attributes);
         out[child.tagName].push(kids);
-        if (Object.keys(child.attributes).length) {
+        if (Object.keys(child.attributes).length && typeof kids === 'object' && !Array.isArray(kids)) {
             kids._attributes = child.attributes;
         }
     });
 
     return out;
-};
+}
 
 /**
  * behaves the same way as Array.filter, if the filter method return true, the element is in the resultList
- * @params children{Array} the children of a node
- * @param f{function} the filter method
+ * @param {(import('./tXml.d.ts').TNode | string)[]} children the children of a node
+ * @param {(node: import('./tXml.d.ts').TNode, index: number, depth: number, path: string) => boolean} f the filter method
+ * @param {number} [dept]
+ * @param {string} [path]
+ * @returns {import('./tXml.d.ts').TNode[]}
  */
 export function filter(children, f, dept = 0, path = '') {
+    /** @type {import('./tXml.d.ts').TNode[]} */
     var out = [];
+    
     children.forEach(function(child, i) {
-        if (typeof(child) === 'object' && f(child, i, dept, path)) out.push(child);
-        if (child.children) {
+        if (typeof(child) === 'object' && f(child, i, dept, path)) {
+            out.push(child);
+        }
+        if (typeof child === 'object' && child.children) {
             var kids = filter(child.children, f, dept + 1, (path ? path + '.' : '') + i + '.' + child.tagName);
             out = out.concat(kids);
         }
     });
     return out;
-};
+}
 
 /**
  * stringify a previously parsed string object.
  * this is useful,
  *  1. to remove whitespace
  * 2. to recreate xml data, with some changed data.
- * @param {tNode} O the object to Stringify
+ * @param {import('./tXml.d.ts').TNode | (import('./tXml.d.ts').TNode | string)[]} O the object to Stringify
  */
 export function stringify(O) {
+    if (!O) return '';
+    
     var out = '';
 
-    function writeChildren(O) {
-        if (O) {
-            for (var i = 0; i < O.length; i++) {
-                if (typeof O[i] == 'string') {
-                    out += O[i].trim();
-                } else {
-                    writeNode(O[i]);
+    /**
+     * @param {(import('./tXml.d.ts').TNode | string)[]} nodes
+     */
+    function writeChildren(nodes) {
+        if (nodes) {
+            for (var i = 0; i < nodes.length; i++) {
+                var node = nodes[i];
+                if (typeof node === 'string') {
+                    out += node.trim();
+                } else if (node) {
+                    writeNode(node);
                 }
             }
         }
     }
 
+    /**
+     * @param {import('./tXml.d.ts').TNode} N
+     */
     function writeNode(N) {
+        if (!N) return;
         out += "<" + N.tagName;
         for (var i in N.attributes) {
-            if (N.attributes[i] === null) {
+            var attrValue = N.attributes[i];
+            if (attrValue === null) {
                 out += ' ' + i;
-            } else if (N.attributes[i].indexOf('"') === -1) {
-                out += ' ' + i + '="' + N.attributes[i].trim() + '"';
+            } else if (attrValue.indexOf('"') === -1) {
+                out += ' ' + i + '="' + attrValue.trim() + '"';
             } else {
-                out += ' ' + i + "='" + N.attributes[i].trim() + "'";
+                out += ' ' + i + "='" + attrValue.trim() + "'";
             }
         }
         if (N.tagName[0] === '?') {
@@ -440,16 +451,17 @@ export function stringify(O) {
         writeChildren(N.children);
         out += '</' + N.tagName + '>';
     }
-    writeChildren(O);
+    writeChildren(Array.isArray(O) ? O : [O]);
 
     return out;
-};
+}
 
 
 /**
  * use this method to read the text content, of some node.
  * It is great if you have mixed content like:
  * this text has some <b>big</b> text and a <a href=''>link</a>
+ * @param {import('./tXml.d.ts').TNode | (import('./tXml.d.ts').TNode | string)[] | string} tDom
  * @return {string}
  */
 export function toContentString(tDom) {
@@ -460,24 +472,36 @@ export function toContentString(tDom) {
             out = out.trim();
         });
         return out;
-    } else if (typeof tDom === 'object') {
+    } else if (typeof tDom === 'object' && tDom !== null) {
         return toContentString(tDom.children)
     } else {
         return ' ' + tDom;
     }
-};
+}
 
+/**
+ * @param {string} S
+ * @param {string} id
+ * @param {boolean} [simplified]
+ * @returns {import('./tXml.d.ts').TNode | Record<string, any> | string | undefined}
+ */
 export function getElementById(S, id, simplified) {
     var out = parse(S, {
         attrValue: id
     });
-    return simplified ? tXml.simplify(out) : out[0];
-};
+    return simplified ? simplify(out) : out[0];
+}
 
+/**
+ * @param {string} S
+ * @param {string} classname
+ * @param {boolean} [simplified]
+ * @returns {(import('./tXml.d.ts').TNode | string)[] | Record<string, any> | string}
+ */
 export function getElementsByClassName(S, classname, simplified) {
     const out = parse(S, {
         attrName: 'class',
         attrValue: '[a-zA-Z0-9- ]*' + classname + '[a-zA-Z0-9- ]*'
     });
-    return simplified ? tXml.simplify(out) : out;
-};
+    return simplified ? simplify(out) : out;
+}

@@ -1,4 +1,4 @@
-import { terser } from 'rollup-plugin-terser'; // minifier
+import terser from '@rollup/plugin-terser';
 
 const config = {
   dir: 'dist',
@@ -7,13 +7,15 @@ const config = {
 };
 
 export default [
+  // Main bundle (all exports)
   {
-    input: ['index.js', 'tXml.js', 'transformStream.js'],
+    input: 'src/index.js',
     output: [
       {
         ...config,
         format: 'cjs',
-        entryFileNames: '[name].js',
+        entryFileNames: '[name].cjs',
+        exports: 'named',
       },
       {
         ...config,
@@ -21,17 +23,50 @@ export default [
         entryFileNames: '[name].mjs',
       },
     ],
-    external: [
-      'through2'
+    external: ['node:stream']
+  },
+  // Parser only (tree-shakeable, no Node.js dependencies)
+  {
+    input: 'src/tXml.js',
+    output: [
+      {
+        ...config,
+        format: 'cjs',
+        entryFileNames: '[name].cjs',
+        exports: 'named',
+      },
+      {
+        ...config,
+        format: 'esm',
+        entryFileNames: '[name].mjs',
+      },
+      // Browser UMD bundle (minified)
+      {
+        file: 'dist/txml.min.js',
+        format: 'umd',
+        name: 'txml',
+      }
+    ],
+    plugins: [
+      terser()
     ]
   },
+  // Transform stream
   {
-    input: 'tXml.js',
-    output: {
-      file: 'dist/txml.min.js',
-      format: 'umd',
-      name: 'txml',
-    },
-    plugins: [ terser() ],
+    input: 'src/transformStream.js',
+    output: [
+      {
+        ...config,
+        format: 'cjs',
+        entryFileNames: '[name].cjs',
+        exports: 'named',
+      },
+      {
+        ...config,
+        format: 'esm',
+        entryFileNames: '[name].mjs',
+      },
+    ],
+    external: ['node:stream', './tXml.js']
   }
 ];

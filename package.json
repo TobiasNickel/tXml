@@ -1,18 +1,21 @@
 {
     "name": "txml",
-    "version": "5.1.1",
+    "version": "6.0.0",
     "description": "fastest XML DOM Parser for node/browser/worker",
-    "main": "dist/index.js",
+    "type": "module",
+    "main": "dist/index.cjs",
     "module": "dist/index.mjs",
     "scripts": {
-        "build": "rollup -c && npm run buildTypes",
-        "buildTypes": "tsc --allowjs --emitDeclarationOnly -d index.js transformStream.js tXml.js --outDir ./dist",
-        "createTypes": "tsc --allowjs -d tXml.js",
-        "test": "node test.js --trace-warnings"
+        "build": "rollup -c && npm run types:copy",
+        "types:copy": "cp src/*.d.ts dist/",
+        "test": "node --test test/test-*.js",
+        "prepublishOnly": "npm run build && npm test"
     },
     "files": [
         "dist",
-        "txml.min.js"
+        "README.md",
+        "LICENSE",
+        "MIGRATION.md"
     ],
     "repository": {
         "type": "git",
@@ -32,18 +35,27 @@
     ],
     "exports": {
         ".": {
-            "require": "./dist/index.js",
-            "import": "./dist/index.mjs"
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.cjs",
+            "default": "./dist/index.mjs"
         },
         "./txml": {
-            "require": "./dist/txml.js",
-            "import": "./dist/txml.mjs"
+            "types": "./dist/tXml.d.ts",
+            "import": "./dist/txml.mjs",
+            "require": "./dist/txml.cjs",
+            "default": "./dist/txml.mjs"
         },
-        "./transformStream": {
-            "require": "./dist/transformStream.js",
-            "import": "./dist/transformStream.mjs"
+        "./transform-stream": {
+            "types": "./dist/transformStream.d.ts",
+            "import": "./dist/transformStream.mjs",
+            "require": "./dist/transformStream.cjs",
+            "default": "./dist/transformStream.mjs"
         },
-        "./*": "./*"
+        "./package.json": "./package.json"
+    },
+    "engines": {
+        "node": ">=18.0.0"
     },
     "author": "Tobias Nickel",
     "license": "MIT",
@@ -52,12 +64,9 @@
     },
     "types": "dist/index.d.ts",
     "homepage": "https://github.com/TobiasNickel/tXml#readme",
-    "dependencies": {
-        "through2": "^3.0.1"
-    },
     "devDependencies": {
-        "rollup": "^2.52.2",
-        "rollup-plugin-terser": "^7.0.2",
-        "typescript": "^4.2.3"
+        "rollup": "^4.24.0",
+        "@rollup/plugin-terser": "^0.4.4",
+        "typescript": "^5.6.0"
     }
 }
