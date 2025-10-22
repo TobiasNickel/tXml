@@ -917,8 +917,8 @@ test('complex real-world XML: Atom feed', () => {
 	assert(entry, 'should have entry element');
 });
 
-test('noChildNodes option - link tag behavior', () => {
-	// By default, 'link' is in the noChildNodes list (like img, br, etc.)
+test('selfClosingTags option - link tag behavior', () => {
+	// By default, 'link' is in the selfClosingTags list (like img, br, etc.)
 	const html = '<head><link rel="stylesheet" href="style.css"><title>Test</title></head>';
 	const result = tXml.parse(html);
 	
@@ -932,8 +932,21 @@ test('noChildNodes option - link tag behavior', () => {
 	assert.deepStrictEqual(linkTag.children, []);
 });
 
-test('parsing with custom noChildNodes option', () => {
-	// Test with empty noChildNodes to allow link to have children
+test('parsing with custom selfClosingTags option', () => {
+	// Test with empty selfClosingTags to allow link to have children
+	const xml = '<container><custom>content</custom></container>';
+	const result = tXml.parse(xml, { selfClosingTags: [] });
+	
+	const container = result[0];
+	assert.strictEqual(container.tagName, 'container');
+	
+	const custom = container.children.find(el => typeof el === 'object' && el.tagName === 'custom');
+	assert(custom);
+	assert.strictEqual(custom.children[0], 'content');
+});
+
+test('backward compatibility - noChildNodes still works', () => {
+	// noChildNodes should still work for backward compatibility
 	const xml = '<container><custom>content</custom></container>';
 	const result = tXml.parse(xml, { noChildNodes: [] });
 	
@@ -943,4 +956,83 @@ test('parsing with custom noChildNodes option', () => {
 	const custom = container.children.find(el => typeof el === 'object' && el.tagName === 'custom');
 	assert(custom);
 	assert.strictEqual(custom.children[0], 'content');
+});
+
+test('isTextNode type guard', () => {
+	const xml = '<div>Hello <span>World</span>!</div>';
+	const [div] = tXml.parse(xml);
+	
+	// Test with text nodes
+	assert.strictEqual(tXml.isTextNode('Hello'), true);
+	assert.strictEqual(tXml.isTextNode(div.children[0]), true);
+	
+	// Test with element nodes
+	assert.strictEqual(tXml.isTextNode(div), false);
+	assert.strictEqual(tXml.isTextNode(div.children[1]), false);
+	
+	// Test filtering
+	const textNodes = div.children.filter(tXml.isTextNode);
+	assert.strictEqual(textNodes.length, 2);
+	assert.strictEqual(textNodes[0], 'Hello');
+	assert.strictEqual(textNodes[1], '!');
+});
+
+test('isElementNode type guard', () => {
+	const xml = '<div>Hello <span>World</span>!</div>';
+	const [div] = tXml.parse(xml);
+	
+	// Test with element nodes
+	assert.strictEqual(tXml.isElementNode(div), true);
+	assert.strictEqual(tXml.isElementNode(div.children[1]), true);
+	
+	// Test with text nodes
+	assert.strictEqual(tXml.isElementNode('Hello'), false);
+	assert.strictEqual(tXml.isElementNode(div.children[0]), false);
+	
+	// Test with null/undefined
+	assert.strictEqual(tXml.isElementNode(null), false);
+	assert.strictEqual(tXml.isElementNode(undefined), false);
+	
+	// Test filtering
+	const elementNodes = div.children.filter(tXml.isElementNode);
+	assert.strictEqual(elementNodes.length, 1);
+	assert.strictEqual(elementNodes[0].tagName, 'span');
+});
+
+test('type guards usage in real scenario', () => {
+	const xml = '<article><title>Title</title>Text content<p>Paragraph</p>More text</article>';
+	const [article] = tXml.parse(xml);
+	
+	// Separate text and elements
+	const texts = article.children.filter(tXml.isTextNode);
+	const elements = article.children.filter(tXml.isElementNode);
+	
+	assert.strictEqual(texts.length, 2);
+	assert.strictEqual(elements.length, 2);
+	assert.strictEqual(texts[0], 'Text content');
+	assert.strictEqual(texts[1], 'More text');
+	assert.strictEqual(elements[0].tagName, 'title');
+	assert.strictEqual(elements[1].tagName, 'p');
+});
+
+test('attribute values: null vs empty string vs value', () => {
+	// Test the three types of attribute values
+	const xml = '<input disabled required="" value="test" checked>';
+	const [input] = tXml.parse(xml);
+	
+	// Attribute without value (boolean attribute)
+	assert.strictEqual(input.attributes.disabled, null);
+	assert.strictEqual(input.attributes.checked, null);
+	
+	// Attribute with empty value
+	assert.strictEqual(input.attributes.required, '');
+	
+	// Attribute with value
+	assert.strictEqual(input.attributes.value, 'test');
+	
+	// Verify all are present
+	assert(Object.keys(input.attributes).includes('disabled'));
+	assert(Object.keys(input.attributes).includes('required'));
+	assert(Object.keys(input.attributes).includes('value'));
+	assert(Object.keys(input.attributes).includes('checked'));
 });

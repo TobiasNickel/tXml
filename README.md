@@ -101,8 +101,14 @@ const result = parse('<user><name>Alice</name></user>');
 - `keepComments: boolean` - Preserve XML comments (default: false)
 - `keepWhitespace: boolean` - Preserve whitespace text nodes (default: false)
 - `simplify: boolean` - Auto-simplify output (default: false)
-- `noChildNodes: string[]` - Tags with no children (default: ['img', 'br', 'input', 'meta', 'link', 'hr'])
+- `selfClosingTags: string[]` - Tags that are self-closing (void elements) (default: ['img', 'br', 'input', 'meta', 'link', 'hr'])
+- `noChildNodes: string[]` - **Deprecated:** Use `selfClosingTags` instead
 - `filter: (node, index, depth, path) => boolean` - Filter nodes during parsing
+
+> **Note on Attributes:** Element attributes can have three types of values:
+> - **String value**: `<div id="test">` → `{id: "test"}`
+> - **null**: Attribute without value: `<input disabled>` → `{disabled: null}`
+> - **Empty string**: Attribute with empty value: `<input value="">` → `{value: ""}`
 
 ### `simplify(nodes)`
 
@@ -168,6 +174,8 @@ for await (const node of xmlStream) {
 - `toContentString(nodes)` - Extract text content
 - `getElementById(xml, id, simplified?)` - Find element by ID
 - `getElementsByClassName(xml, className, simplified?)` - Find elements by class
+- `isTextNode(node)` - Type guard to check if a node is a text node (string)
+- `isElementNode(node)` - Type guard to check if a node is an element node (TNode)
 
 ## Examples
 
@@ -176,7 +184,7 @@ for await (const node of xmlStream) {
 import { parse, simplify } from 'txml';
 
 const rss = await fetch('https://example.com/feed.xml').then(r => r.text());
-const dom = parse(rss, { noChildNodes: [] }); // RSS uses <link> differently
+const dom = parse(rss, { selfClosingTags: [] }); // RSS uses <link> differently
 const simplified = simplify(dom);
 
 simplified.rss.channel.item.forEach(item => {
@@ -219,6 +227,27 @@ const items = parse(xml, {
   filter: (node) => node.tagName === 'item'
 });
 // Only returns <item> nodes
+```
+
+### Type Guards for Mixed Node Arrays
+```javascript
+import { parse, isTextNode, isElementNode } from 'txml';
+
+const xml = '<div>Hello <span>World</span>!</div>';
+const [div] = parse(xml);
+
+// Filter and process different node types
+div.children.forEach(child => {
+  if (isTextNode(child)) {
+    console.log('Text:', child);
+  } else if (isElementNode(child)) {
+    console.log('Element:', child.tagName, child.attributes);
+  }
+});
+
+// Or use for filtering
+const textNodes = div.children.filter(isTextNode);
+const elementNodes = div.children.filter(isElementNode);
 ```
 
 ## Tree-Shaking
@@ -298,4 +327,4 @@ Major modernization in 2025 (v6.0).
 
 ---
 
-**Try it online:** [https://tnickel.de/2017/04/02/txml-online](https://tnickel.de/2017/04/02/txml-online)
+**Try it online:** [https://tnickel.de/2017/04/02/2017-04-txml-online/](https://tnickel.de/2017/04/02/2017-04-txml-online/)

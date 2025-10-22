@@ -3,6 +3,12 @@
  */
 export interface TNode {
     tagName: string;
+    /**
+     * Element attributes. Values can be:
+     * - string: attribute with a value (e.g., `<div id="test">` → `{id: "test"}`)
+     * - null: attribute without a value (e.g., `<input disabled>` → `{disabled: null}`)
+     * - empty string: attribute with empty value (e.g., `<input value="">` → `{value: ""}`)
+     */
     attributes: Record<string, string | null>;
     children: (TNode | string)[];
 }
@@ -13,8 +19,17 @@ export interface TNode {
 export interface ParseOptions {
     /** Starting position in the string */
     pos?: number;
-    /** Array of tag names that have no children and don't need to be closed */
+    /** 
+     * Array of tag names that are self-closing (void elements) and don't need closing tags.
+     * Default: ['img', 'br', 'input', 'meta', 'link', 'hr']
+     * @deprecated Use selfClosingTags instead
+     */
     noChildNodes?: string[];
+    /** 
+     * Array of tag names that are self-closing (void elements) and don't need closing tags.
+     * Default: ['img', 'br', 'input', 'meta', 'link', 'hr']
+     */
+    selfClosingTags?: string[];
     /** If true, the returned object will have a pos property indicating where parsing stopped */
     setPos?: boolean;
     /** Keep XML comments in the output */
@@ -108,3 +123,35 @@ export function getElementById(xml: string, id: string, simplified?: boolean): T
  * @returns Found nodes
  */
 export function getElementsByClassName(xml: string, classname: string, simplified?: boolean): TNode[] | Record<string, any>;
+
+/**
+ * Type guard to check if a node is a text node (string)
+ * @param node - The node to check
+ * @returns True if the node is a string (text node)
+ * @example
+ * const parsed = parse('<div>Hello <span>World</span></div>');
+ * parsed[0].children.forEach(child => {
+ *   if (isTextNode(child)) {
+ *     console.log('Text:', child);
+ *   } else {
+ *     console.log('Element:', child.tagName);
+ *   }
+ * });
+ */
+export function isTextNode(node: TNode | string): node is string;
+
+/**
+ * Type guard to check if a node is an element node (TNode)
+ * @param node - The node to check
+ * @returns True if the node is a TNode (element node)
+ * @example
+ * const parsed = parse('<div>Hello <span>World</span></div>');
+ * parsed[0].children.forEach(child => {
+ *   if (isElementNode(child)) {
+ *     console.log('Element:', child.tagName);
+ *   } else {
+ *     console.log('Text:', child);
+ *   }
+ * });
+ */
+export function isElementNode(node: TNode | string): node is TNode;

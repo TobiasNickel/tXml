@@ -156,7 +156,7 @@ export function parse(S, options) {
      * to parse children it uses the parseChildren again, that makes the parsing recursive
      * @returns {import('./tXml.d.ts').TNode}
      */
-    var NoChildNodes = options.noChildNodes || ['img', 'br', 'input', 'meta', 'link', 'hr'];
+    var SelfClosingTags = options.selfClosingTags || options.noChildNodes || ['img', 'br', 'input', 'meta', 'link', 'hr'];
 
     function parseNode() {
         pos++;
@@ -209,7 +209,7 @@ export function parse(S, options) {
                 pos = S.indexOf('</style>', pos);
                 children = [S.slice(start, pos)];
                 pos += 8;
-            } else if (NoChildNodes.indexOf(tagName) === -1) {
+            } else if (SelfClosingTags.indexOf(tagName) === -1) {
                 pos++;
                 children = parseChildren(tagName);
             } else {
@@ -504,4 +504,40 @@ export function getElementsByClassName(S, classname, simplified) {
         attrValue: '[a-zA-Z0-9- ]*' + classname + '[a-zA-Z0-9- ]*'
     });
     return simplified ? simplify(out) : out;
+}
+
+/**
+ * Type guard to check if a node is a text node (string).
+ * Useful for filtering and type narrowing when working with mixed node arrays.
+ * 
+ * @param {import('./tXml.d.ts').TNode | string} node - The node to check
+ * @returns {node is string} True if the node is a string (text node)
+ * @example
+ * const parsed = parse('<div>Hello <span>World</span></div>');
+ * parsed[0].children.forEach(child => {
+ *   if (isTextNode(child)) {
+ *     console.log('Text:', child);
+ *   }
+ * });
+ */
+export function isTextNode(node) {
+    return typeof node === 'string';
+}
+
+/**
+ * Type guard to check if a node is an element node (TNode object).
+ * Useful for filtering and type narrowing when working with mixed node arrays.
+ * 
+ * @param {import('./tXml.d.ts').TNode | string} node - The node to check
+ * @returns {node is import('./tXml.d.ts').TNode} True if the node is a TNode (element node)
+ * @example
+ * const parsed = parse('<div>Hello <span>World</span></div>');
+ * parsed[0].children.forEach(child => {
+ *   if (isElementNode(child)) {
+ *     console.log('Element:', child.tagName);
+ *   }
+ * });
+ */
+export function isElementNode(node) {
+    return typeof node === 'object' && node !== null && 'tagName' in node;
 }
