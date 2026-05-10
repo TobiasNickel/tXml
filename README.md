@@ -100,6 +100,7 @@ const result = parse('<user><name>Alice</name></user>');
 **Options:**
 - `keepComments: boolean` - Preserve XML comments (default: false)
 - `keepWhitespace: boolean` - Preserve whitespace text nodes (default: false)
+- `decodeEntities: boolean` - Decode XML entities in text and attributes (default: false)
 - `simplify: boolean` - Auto-simplify output (default: false)
 - `selfClosingTags: string[]` - Tags that are self-closing (void elements) (default: ['img', 'br', 'input', 'meta', 'link', 'hr'])
 - `noChildNodes: string[]` - **Deprecated:** Use `selfClosingTags` instead
@@ -123,7 +124,7 @@ console.log(result);
 // { user: { name: 'Alice', age: '25' } }
 ```
 
-### `stringify(nodes)`
+### `stringify(nodes, options?)`
 
 Convert parsed nodes back to XML string.
 
@@ -133,6 +134,17 @@ import { parse, stringify } from 'txml';
 const nodes = parse('<user><name>Alice</name></user>');
 const xml = stringify(nodes);
 // '<user><name>Alice</name></user>'
+```
+
+**Options:**
+- `encodeEntities: boolean` - Encode XML entities in text and attributes during output (default: false)
+
+```javascript
+import { parse, stringify } from 'txml';
+
+const nodes = parse('<root a="x &amp; y">a &lt; b</root>', { decodeEntities: true });
+const xml = stringify(nodes, { encodeEntities: true });
+// '<root a="x &amp; y">a &lt; b</root>'
 ```
 
 ### `transformStream(offset?, options?)`

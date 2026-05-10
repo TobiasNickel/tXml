@@ -187,6 +187,22 @@ test('attribute without value', () => {
 	assert.deepStrictEqual(tXml.stringify(tXml.parse(s)), s);
 });
 
+test('unquoted attribute value', () => {
+	const s = '<p type=bold>hello mom</p>';
+	assert.deepStrictEqual(
+		tXml.parse(s),
+		[{ tagName: 'p', attributes: { type: 'bold' }, children: ['hello mom'] }]
+	);
+});
+
+test('unquoted and boolean attributes together', () => {
+	const s = '<p type=bold disabled>hello mom</p>';
+	assert.deepStrictEqual(
+		tXml.parse(s),
+		[{ tagName: 'p', attributes: { type: 'bold', disabled: null }, children: ['hello mom'] }]
+	);
+});
+
 test('stringify ignores undefined', () => {
 	assert(tXml.stringify(undefined) === '');
 });
@@ -591,6 +607,24 @@ test('parsing with special characters in attributes', () => {
 	assert.strictEqual(result[0].attributes.attr3, 'value with &gt; greater than');
 });
 
+test('parse decodeEntities option decodes text and attributes', () => {
+	const xml = '<msg a="x &amp; y" b="&#62;" c="&#x3C;">a &lt; b &amp;&amp; c &gt; d</msg>';
+	const [msg] = tXml.parse(xml, { decodeEntities: true });
+
+	assert.strictEqual(msg.attributes.a, 'x & y');
+	assert.strictEqual(msg.attributes.b, '>');
+	assert.strictEqual(msg.attributes.c, '<');
+	assert.strictEqual(msg.children[0], 'a < b && c > d');
+});
+
+test('parse decodeEntities keeps unknown entities unchanged', () => {
+	const xml = '<msg attr="x &unknown; y">a &unknown; b</msg>';
+	const [msg] = tXml.parse(xml, { decodeEntities: true });
+
+	assert.strictEqual(msg.attributes.attr, 'x &unknown; y');
+	assert.strictEqual(msg.children[0], 'a &unknown; b');
+});
+
 test('parsing empty and self-closing tags', () => {
 	const xml = '<root><empty></empty><selfclose /><selfclose/><another /></root>';
 	const result = tXml.parse(xml);
@@ -714,6 +748,30 @@ test('stringify with duplicate attributes preserves last value', () => {
 	
 	const result = tXml.stringify(parsed);
 	assert.strictEqual(result, '<test id="final-value"></test>');
+});
+
+test('stringify encodeEntities option encodes text and attributes', () => {
+	const parsed = [{
+		tagName: 'test',
+		attributes: {
+			attr: 'a < b && c > d "quote" and \'apostrophe\''
+		},
+		children: ['x < y && y > z']
+	}];
+
+	const result = tXml.stringify(parsed, { encodeEntities: true });
+	assert.strictEqual(
+		result,
+		'<test attr="a &lt; b &amp;&amp; c &gt; d &quot;quote&quot; and &apos;apostrophe&apos;">x &lt; y &amp;&amp; y &gt; z</test>'
+	);
+});
+
+test('parse decodeEntities and stringify encodeEntities roundtrip entities', () => {
+	const xml = '<root attr="x &amp; y">1 &lt; 2 &amp;&amp; 3 &gt; 2</root>';
+	const parsed = tXml.parse(xml, { decodeEntities: true });
+	const out = tXml.stringify(parsed, { encodeEntities: true });
+
+	assert.strictEqual(out, xml);
 });
 
 test('parsing complex SVG with paths and transforms', () => {

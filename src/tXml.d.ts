@@ -36,6 +36,8 @@ export interface ParseOptions {
     keepComments?: boolean;
     /** Keep whitespace text nodes */
     keepWhitespace?: boolean;
+    /** Decode XML entities in text and attribute values (e.g. `&amp;` -> `&`) */
+    decodeEntities?: boolean;
     /** Automatically simplify the output */
     simplify?: boolean;
     /** Parse a single node instead of a list of nodes */
@@ -46,6 +48,14 @@ export interface ParseOptions {
     attrValue?: string;
     /** Filter function to apply to nodes */
     filter?: (node: TNode, index: number, depth: number, path: string) => boolean;
+}
+
+/**
+ * Options for stringifying XML
+ */
+export interface StringifyOptions {
+    /** Encode XML entities in text and attribute values (e.g. `&` -> `&amp;`) */
+    encodeEntities?: boolean;
 }
 
 /**
@@ -94,9 +104,10 @@ export function filter(
  * Stringify a parsed object back to XML
  * Useful for removing whitespace or recreating XML with modified data
  * @param node - The node(s) to stringify
+ * @param options - Stringify options
  * @returns XML string
  */
-export function stringify(node: TNode | (TNode | string)[]): string;
+export function stringify(node: TNode | (TNode | string)[], options?: StringifyOptions): string;
 
 /**
  * Read the text content of a node, useful for mixed content

@@ -5,6 +5,62 @@
  */
 
 /**
+ * Decode XML entities in text and attribute values.
+ * Unknown or malformed entities are left unchanged.
+ * @param {string} value
+ * @returns {string}
+ */
+function decodeEntities(value) {
+    return value.replace(/&(#x[0-9a-fA-F]+|#\d+|amp|lt|gt|quot|apos);/g, function(match, entity) {
+        if (entity === 'amp') return '&';
+        if (entity === 'lt') return '<';
+        if (entity === 'gt') return '>';
+        if (entity === 'quot') return '"';
+        if (entity === 'apos') return "'";
+
+        if (entity[0] === '#') {
+            var isHex = entity[1] === 'x' || entity[1] === 'X';
+            var num = parseInt(entity.slice(isHex ? 2 : 1), isHex ? 16 : 10);
+            if (!Number.isNaN(num) && num >= 0 && num <= 0x10FFFF) {
+                try {
+                    return String.fromCodePoint(num);
+                } catch (e) {
+                    return match;
+                }
+            }
+        }
+
+        return match;
+    });
+}
+
+/**
+ * Encode text for safe XML serialization.
+ * @param {string} value
+ * @returns {string}
+ */
+function encodeTextEntities(value) {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+/**
+ * Encode attribute values for safe XML serialization.
+ * @param {string} value
+ * @returns {string}
+ */
+function encodeAttributeEntities(value) {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
+/**
  * parseXML / html into a DOM Object. with no validation and some failure tolerance
  * @param {string} S your XML to parse
  * @param {import('./tXml.d.ts').ParseOptions} [options] all other options:
@@ -16,7 +72,8 @@ export function parse(S, options) {
 
     var pos = options.pos || 0;
     var keepComments = !!options.keepComments;
-    var keepWhitespace = !!options.keepWhitespace
+    var keepWhitespace = !!options.keepWhitespace;
+    var decodeEntitiesEnabled = !!options.decodeEntities;
 
     var openBracket = "<";
     var openBracketCC = "<".charCodeAt(0);
@@ -135,7 +192,8 @@ export function parse(S, options) {
         pos = S.indexOf(openBracket, pos) - 1;
         if (pos === -2)
             pos = S.length;
-        return S.slice(start, pos + 1);
+        var text = S.slice(start, pos + 1);
+        return decodeEntitiesEnabled ? decodeEntities(text) : text;
     }
     /**
      *    returns text until the first nonAlphabetic letter
@@ -210,6 +268,9 @@ export function parse(S, options) {
                             pos++;
                         }
                         value = S.slice(valueStart, pos);
+                        if (decodeEntitiesEnabled) {
+                            value = decodeEntities(value);
+                        }
                     }
                 }
                 attributes[name] = value;
@@ -274,8 +335,9 @@ export function parse(S, options) {
     function parseString() {
         var startChar = S[pos];
         var startpos = pos + 1;
-        pos = S.indexOf(startChar, startpos)
-        return S.slice(startpos, pos);
+        pos = S.indexOf(startChar, startpos);
+        var value = S.slice(startpos, pos);
+        return decodeEntitiesEnabled ? decodeEntities(value) : value;
     }
 
     /**
@@ -446,9 +508,13 @@ export function filter(children, f, dept = 0, path = '') {
  *  1. to remove whitespace
  * 2. to recreate xml data, with some changed data.
  * @param {import('./tXml.d.ts').TNode | (import('./tXml.d.ts').TNode | string)[]} O the object to Stringify
+ * @param {import('./tXml.d.ts').StringifyOptions} [options] stringify options
  */
-export function stringify(O) {
+export function stringify(O, options) {
     if (!O) return '';
+
+    options = options || {};
+    var encodeEntitiesEnabled = !!options.encodeEntities;
     
     var out = '';
 
@@ -460,7 +526,8 @@ export function stringify(O) {
             for (var i = 0; i < nodes.length; i++) {
                 var node = nodes[i];
                 if (typeof node === 'string') {
-                    out += node.trim();
+                    var textNode = node.trim();
+                    out += encodeEntitiesEnabled ? encodeTextEntities(textNode) : textNode;
                 } else if (node) {
                     writeNode(node);
                 }
@@ -478,6 +545,8 @@ export function stringify(O) {
             var attrValue = N.attributes[i];
             if (attrValue === null) {
                 out += ' ' + i;
+            } else if (encodeEntitiesEnabled) {
+                out += ' ' + i + '="' + encodeAttributeEntities(attrValue.trim()) + '"';
             } else if (attrValue.indexOf('"') === -1) {
                 out += ' ' + i + '="' + attrValue.trim() + '"';
             } else {
