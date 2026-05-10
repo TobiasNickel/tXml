@@ -262,6 +262,23 @@ test('simplify option with parse', () => {
 	assert.ok(true);
 });
 
+test('parse processing instruction with non-attribute payload', () => {
+	assert.deepStrictEqual(
+		tXml.parse('<?ACE 4?><root/>'),
+		[
+			{ tagName: '?ACE', attributes: {}, children: ['4'] },
+			{ tagName: 'root', attributes: {}, children: [] }
+		]
+	);
+});
+
+test('stringify preserves processing instruction payload', () => {
+	assert.strictEqual(
+		tXml.stringify(tXml.parse('<?ACE 4?>')),
+		'<?ACE 4?>'
+	);
+});
+
 test('SVG with comment', () => {
 	const svgWithCommentString = fs.readFileSync(files.commented).toString();
 	assert.deepStrictEqual(

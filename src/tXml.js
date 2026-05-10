@@ -25,6 +25,7 @@ export function parse(S, options) {
     var minusCC = "-".charCodeAt(0);
     var slashCC = "/".charCodeAt(0);
     var exclamationCC = '!'.charCodeAt(0);
+    var questionMarkCC = '?'.charCodeAt(0);
     var singleQuoteCC = "'".charCodeAt(0);
     var doubleQuoteCC = '"'.charCodeAt(0);
     var openCornerBracketCC = '['.charCodeAt(0);
@@ -105,10 +106,6 @@ export function parse(S, options) {
                 }
                 var node = parseNode();
                 children.push(node);
-                if (node.tagName[0] === '?') {
-                    children.push(...node.children);
-                    node.children = [];
-                }
             } else {
                 var text = parseText();
                 if (keepWhitespace) {
@@ -161,13 +158,19 @@ export function parse(S, options) {
     function parseNode() {
         pos++;
         const tagName = parseName();
+        const isProcessingInstruction = tagName[0] === '?';
+        const instructionContentStart = pos;
         /** @type {Record<string, string | null>} */
         const attributes = {};
         /** @type {(import('./tXml.d.ts').TNode | string)[]} */
         let children = [];
 
         // parsing attributes
-        while (S.charCodeAt(pos) !== closeBracketCC && S[pos]) {
+        while (
+            S[pos] &&
+            S.charCodeAt(pos) !== closeBracketCC &&
+            !(isProcessingInstruction && S.charCodeAt(pos) === questionMarkCC && S.charCodeAt(pos + 1) === closeBracketCC)
+        ) {
             var c = S.charCodeAt(pos);
             if ((c > 64 && c < 91) || (c > 96 && c < 123)) {
                 //if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
@@ -197,6 +200,27 @@ export function parse(S, options) {
             }
             pos++;
         }
+
+        if (isProcessingInstruction) {
+            var instructionContent = S.slice(instructionContentStart, pos).trim();
+
+            if (instructionContent.length > 0 && Object.keys(attributes).length === 0) {
+                children = [instructionContent];
+            }
+
+            if (S.charCodeAt(pos) === questionMarkCC && S.charCodeAt(pos + 1) === closeBracketCC) {
+                pos += 2;
+            } else if (S.charCodeAt(pos) === closeBracketCC) {
+                pos += 1;
+            }
+
+            return {
+                tagName,
+                attributes,
+                children,
+            };
+        }
+
         // optional parsing of children
         if (S.charCodeAt(pos - 1) !== slashCC) {
             if (tagName == "script") {
@@ -444,6 +468,14 @@ export function stringify(O) {
             }
         }
         if (N.tagName[0] === '?') {
+            if (N.children && N.children.length) {
+                var instructionPayload = N.children.filter(function(child) {
+                    return typeof child === 'string';
+                }).join(' ').trim();
+                if (instructionPayload.length > 0) {
+                    out += ' ' + instructionPayload;
+                }
+            }
             out += '?>';
             return;
         }
