@@ -30,6 +30,7 @@ export function parse(S, options) {
     var doubleQuoteCC = '"'.charCodeAt(0);
     var openCornerBracketCC = '['.charCodeAt(0);
     var closeCornerBracketCC = ']'.charCodeAt(0);
+    var questionCC = '?'.charCodeAt(0);
 
 
     /**
@@ -222,7 +223,7 @@ export function parse(S, options) {
         }
 
         // optional parsing of children
-        if (S.charCodeAt(pos - 1) !== slashCC) {
+        if (S.charCodeAt(pos - 1) !== slashCC && S.charCodeAt(pos - 1) !== questionCC) {
             if (tagName == "script") {
                 var start = pos + 1;
                 pos = S.indexOf('</script>', pos);
