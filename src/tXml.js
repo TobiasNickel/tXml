@@ -28,6 +28,7 @@ export function parse(S, options) {
     var questionMarkCC = '?'.charCodeAt(0);
     var singleQuoteCC = "'".charCodeAt(0);
     var doubleQuoteCC = '"'.charCodeAt(0);
+    var equalSignCC = '='.charCodeAt(0);
     var openCornerBracketCC = '['.charCodeAt(0);
     var closeCornerBracketCC = ']'.charCodeAt(0);
     var questionCC = '?'.charCodeAt(0);
@@ -176,28 +177,43 @@ export function parse(S, options) {
             if ((c > 64 && c < 91) || (c > 96 && c < 123)) {
                 //if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
                 var name = parseName();
-                // search beginning of the string
-                var code = S.charCodeAt(pos);
-                while (code && code !== singleQuoteCC && code !== doubleQuoteCC && !((code > 64 && code < 91) || (code > 96 && code < 123)) && code !== closeBracketCC) {
-                    pos++;
-                    code = S.charCodeAt(pos);
-                }
                 /** @type {string | null} */
-                var value;
-                if (code === singleQuoteCC || code === doubleQuoteCC) {
-                    value = parseString();
-                    if (pos === -1) {
-                        return {
-                            tagName,
-                            attributes,
-                            children,
-                        };
+                var value = null;
+
+                // Skip whitespace after the attribute name.
+                while (S.charCodeAt(pos) === 32 || S.charCodeAt(pos) === 9 || S.charCodeAt(pos) === 10 || S.charCodeAt(pos) === 13) {
+                    pos++;
+                }
+
+                if (S.charCodeAt(pos) === equalSignCC) {
+                    pos++;
+
+                    // Skip whitespace after '='.
+                    while (S.charCodeAt(pos) === 32 || S.charCodeAt(pos) === 9 || S.charCodeAt(pos) === 10 || S.charCodeAt(pos) === 13) {
+                        pos++;
                     }
-                } else {
-                    value = null;
-                    pos--;
+
+                    var code = S.charCodeAt(pos);
+                    if (code === singleQuoteCC || code === doubleQuoteCC) {
+                        value = parseString();
+                        if (pos === -1) {
+                            return {
+                                tagName,
+                                attributes,
+                                children,
+                            };
+                        }
+                    } else if (code && code !== closeBracketCC) {
+                        // HTML-style unquoted attribute value: read until whitespace, '/', or '>'.
+                        var valueStart = pos;
+                        while (S[pos] && nameSpacer.indexOf(S[pos]) === -1) {
+                            pos++;
+                        }
+                        value = S.slice(valueStart, pos);
+                    }
                 }
                 attributes[name] = value;
+                continue;
             }
             pos++;
         }
