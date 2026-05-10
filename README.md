@@ -124,6 +124,15 @@ console.log(result);
 // { user: { name: 'Alice', age: '25' } }
 ```
 
+You can also pass an XML string directly:
+
+```javascript
+import { simplify } from 'txml';
+
+const result = simplify('<user><name>Alice</name></user>');
+// { user: { name: 'Alice' } }
+```
+
 ### `stringify(nodes, options?)`
 
 Convert parsed nodes back to XML string.

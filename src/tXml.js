@@ -404,6 +404,14 @@ export function parse(S, options) {
  * @returns {Record<string, any> | string}
  */
 export function simplify(children) {
+    if (typeof children === 'string') {
+        return simplify(parse(children));
+    }
+
+    if (!Array.isArray(children)) {
+        throw new TypeError('simplify() expects parsed node array or XML string');
+    }
+
     /** @type {Record<string, any>} */
     var out = {};
     

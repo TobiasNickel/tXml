@@ -774,6 +774,27 @@ test('parse decodeEntities and stringify encodeEntities roundtrip entities', () 
 	assert.strictEqual(out, xml);
 });
 
+test('issue #52: simplify handles valid XML string with declaration', () => {
+	const xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<getschedulesforgenchannellist>
+	<schedules channelid="369">
+		<account>0</account>
+		<schedule>
+			<category>Vígjáték</category>
+			<starttime>2024-04-01T23:10:00.000Z</starttime>
+			<title>A szentfazék</title>
+		</schedule>
+	</schedules>
+</getschedulesforgenchannellist>`;
+
+	const fromString = tXml.simplify(xml);
+	const fromParsed = tXml.simplify(tXml.parse(xml));
+
+	assert.deepStrictEqual(fromString, fromParsed);
+	assert.strictEqual(fromString.getschedulesforgenchannellist.schedules.account, '0');
+	assert.strictEqual(fromString.getschedulesforgenchannellist.schedules.schedule.category, 'Vígjáték');
+});
+
 test('parsing complex SVG with paths and transforms', () => {
 	const complexSvg = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
 		<defs>

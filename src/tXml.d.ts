@@ -69,10 +69,10 @@ export function parse(xml: string, options?: ParseOptions): (TNode | string)[];
 /**
  * Transform the DOM object to a simpler format like PHP's SimpleXML
  * Note: The order of elements is not preserved, and the original XML cannot be reproduced
- * @param children - Array of nodes to simplify
+ * @param children - Array of nodes to simplify, or raw XML string
  * @returns Simplified object structure
  */
-export function simplify(children: TNode[]): Record<string, any>;
+export function simplify(children: TNode[] | string): Record<string, any> | string;
 
 /**
  * Similar to simplify, but preserves more information
