@@ -3,13 +3,75 @@ import { Transform } from 'node:stream';
 import { parse } from './tXml.js';
 
 /**
+ * Find the position directly behind the root opening tag.
+ * Returns -1 when more data is needed.
+ * @param {string} xml
+ * @returns {number}
+ */
+function detectRootContentOffset(xml) {
+    let i = 0;
+
+    while (i < xml.length) {
+        const open = xml.indexOf('<', i);
+        if (open === -1) return -1;
+
+        if (xml.startsWith('<!--', open)) {
+            const end = xml.indexOf('-->', open + 4);
+            if (end === -1) return -1;
+            i = end + 3;
+            continue;
+        }
+
+        if (xml.startsWith('<?', open)) {
+            const end = xml.indexOf('?>', open + 2);
+            if (end === -1) return -1;
+            i = end + 2;
+            continue;
+        }
+
+        if (xml.startsWith('<!', open)) {
+            const end = xml.indexOf('>', open + 2);
+            if (end === -1) return -1;
+            i = end + 1;
+            continue;
+        }
+
+        if (xml[open + 1] === '/') {
+            i = open + 2;
+            continue;
+        }
+
+        let quote = '';
+        for (let p = open + 1; p < xml.length; p++) {
+            const ch = xml[p];
+            if (quote) {
+                if (ch === quote) quote = '';
+                continue;
+            }
+            if (ch === '"' || ch === "'") {
+                quote = ch;
+                continue;
+            }
+            if (ch === '>') {
+                return p + 1;
+            }
+        }
+
+        return -1;
+    }
+
+    return -1;
+}
+
+/**
  * Create a Node.js Transform stream that parses XML chunks
- * @param {number|string} offset - Starting offset or string whose length is the offset
+ * @param {number|string} offset - Starting offset; if omitted, root offset is auto-detected
  * @param {import('./tXml.d.ts').ParseOptions} [parseOptions] - Options for the XML parser
  * @returns {Transform} Transform stream that emits parsed XML nodes
  */
 export function transformStream(offset, parseOptions) {
     if (!parseOptions) parseOptions = {};
+    let autoDetectOffset = typeof offset === 'undefined';
     if (typeof offset === 'string') {
         offset = offset.length;
     }
@@ -26,6 +88,17 @@ export function transformStream(offset, parseOptions) {
          */
         transform(chunk, encoding, callback) {
             data += chunk;
+
+            if (autoDetectOffset) {
+                const detectedOffset = detectRootContentOffset(data);
+                if (detectedOffset === -1) {
+                    callback();
+                    return;
+                }
+                position = detectedOffset;
+                autoDetectOffset = false;
+            }
+
             let lastPos = 0;
 
             while (true) {
@@ -91,12 +164,13 @@ export function transformStream(offset, parseOptions) {
 /**
  * Create a Web Streams API TransformStream that parses XML chunks
  * Compatible with browsers, Deno, Bun, and modern Node.js
- * @param {number|string} offset - Starting offset or string whose length is the offset
+ * @param {number|string} offset - Starting offset; if omitted, root offset is auto-detected
  * @param {import('./tXml.d.ts').ParseOptions} [parseOptions] - Options for the XML parser
  * @returns {TransformStream} Web TransformStream that emits parsed XML nodes
  */
 export function transformWebStream(offset, parseOptions) {
     if (!parseOptions) parseOptions = {};
+    let autoDetectOffset = typeof offset === 'undefined';
     if (typeof offset === 'string') {
         offset = offset.length;
     }
@@ -111,6 +185,16 @@ export function transformWebStream(offset, parseOptions) {
          */
         transform(chunk, controller) {
             data += chunk;
+
+            if (autoDetectOffset) {
+                const detectedOffset = detectRootContentOffset(data);
+                if (detectedOffset === -1) {
+                    return;
+                }
+                position = detectedOffset;
+                autoDetectOffset = false;
+            }
+
             let lastPos = 0;
 
             while (true) {

@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import fs from 'node:fs';
+import { Readable } from 'node:stream';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -42,6 +43,18 @@ test('stream: do not find unclosed comments', async () => {
 		numberOfElements++;
 	}
 	assert.strictEqual(numberOfElements, 0, 'do not find unclosed comments');
+});
+
+test('stream: auto-detect offset when omitted', async () => {
+	const xml = '<root><item id="1">a</item><item id="2">b</item></root>';
+	const xmlStream = Readable.from([xml]).pipe(tXml.transformStream());
+	const tags = [];
+
+	for await (let element of xmlStream) {
+		tags.push(element.tagName);
+	}
+
+	assert.deepStrictEqual(tags, ['item', 'item'], 'expected child elements when offset is omitted');
 });
 
 // Only run if long.xml exists

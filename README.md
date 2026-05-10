@@ -144,7 +144,7 @@ import { transformStream } from 'txml';
 import fs from 'node:fs';
 
 const stream = fs.createReadStream('large.xml')
-  .pipe(transformStream(0));
+  .pipe(transformStream());
 
 for await (const node of stream) {
   console.log(node);
@@ -161,7 +161,7 @@ import { transformWebStream } from 'txml';
 const response = await fetch('data.xml');
 const xmlStream = response.body
   .pipeThrough(new TextDecoderStream())
-  .pipeThrough(transformWebStream(0));
+  .pipeThrough(transformWebStream());
 
 for await (const node of xmlStream) {
   console.log(node);
@@ -209,7 +209,7 @@ import { transformStream } from 'txml';
 import fs from 'node:fs';
 
 const stream = fs.createReadStream('huge.xml')
-  .pipe(transformStream('<root>'.length));
+  .pipe(transformStream());
 
 let count = 0;
 for await (const node of stream) {
@@ -217,6 +217,9 @@ for await (const node of stream) {
   if (count % 1000 === 0) console.log(`Processed ${count} nodes`);
 }
 ```
+
+When `offset` is omitted, tXml auto-detects the root opening tag and starts emitting child elements.
+Pass a numeric or string `offset` only when you need explicit control.
 
 ### Filter During Parse
 ```javascript

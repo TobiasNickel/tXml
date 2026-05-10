@@ -153,7 +153,7 @@ const dom = txml.parse(`
         <p>hello</p>
     </body>
 </html>`);
-const styleElement = data.filter(dom, node=>node.tagName.toLowerCase() === 'style')[0];
+const styleElement = txml.filter(dom, node=>node.tagName.toLowerCase() === 'style')[0];
 ```
 
 ### **txml.getElementById** (xml, id) 
