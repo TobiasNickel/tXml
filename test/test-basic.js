@@ -795,6 +795,29 @@ test('issue #52: simplify handles valid XML string with declaration', () => {
 	assert.strictEqual(fromString.getschedulesforgenchannellist.schedules.schedule.category, 'Vígjáték');
 });
 
+test('issue #45: filter option works recursively on parse, distinct from array filter', () => {
+	const xml = '<root><node id="1" type="item"/><node id="2" type="other"/><container><node id="3" type="item"/></container></root>';
+	
+	// parse option filter: recursive search on all nodes
+	const itemsByParseFilter = tXml.parse(xml, {
+		filter: (node) => node.tagName === 'node' && node.attributes.type === 'item'
+	});
+	assert.strictEqual(itemsByParseFilter.length, 2);
+	assert.strictEqual(itemsByParseFilter[0].attributes.id, '1');
+	assert.strictEqual(itemsByParseFilter[1].attributes.id, '3');
+	
+	// Array.filter on parse result: only filters top-level array (usually root(s))
+	const itemsByArrayFilter = tXml.parse(xml).filter(
+		(node) => typeof node === 'object' && node.tagName === 'node'
+	);
+	assert.strictEqual(itemsByArrayFilter.length, 0); // root is not a 'node' tag
+	
+	// getElementById: searches attribute by name (default 'id')
+	const byId = tXml.getElementById(xml, '2');
+	assert.strictEqual(byId.tagName, 'node');
+	assert.strictEqual(byId.attributes.id, '2');
+});
+
 test('parsing complex SVG with paths and transforms', () => {
 	const complexSvg = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
 		<defs>
