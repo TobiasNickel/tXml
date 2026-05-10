@@ -480,6 +480,38 @@ test('parsing RSS feed structure (simple example)', () => {
 	assert.strictEqual(title.children[0], 'First Item');
 });
 
+test('parsing GPX trkpt with time element', () => {
+	const gpx = `<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<gpx version="1.1" creator="Ersteller der Datei">
+	<trk>
+		<trkseg>
+			<trkpt lat="48.208174" lon="16.373819">
+				<time>2026-05-10T12:34:56Z</time>
+			</trkpt>
+		</trkseg>
+	</trk>
+</gpx>`;
+
+	const parsed = tXml.parse(gpx);
+	const gpxNode = parsed.find(el => typeof el === 'object' && el.tagName === 'gpx');
+	assert(gpxNode, 'gpx element should exist');
+
+	const trk = gpxNode.children.find(el => typeof el === 'object' && el.tagName === 'trk');
+	assert(trk, 'trk element should exist');
+
+	const trkseg = trk.children.find(el => typeof el === 'object' && el.tagName === 'trkseg');
+	assert(trkseg, 'trkseg element should exist');
+
+	const trkpt = trkseg.children.find(el => typeof el === 'object' && el.tagName === 'trkpt');
+	assert(trkpt, 'trkpt element should exist');
+	assert.strictEqual(trkpt.attributes.lat, '48.208174');
+	assert.strictEqual(trkpt.attributes.lon, '16.373819');
+
+	const timeNode = trkpt.children.find(el => typeof el === 'object' && el.tagName === 'time');
+	assert(timeNode, 'time element should exist inside trkpt');
+	assert.strictEqual(timeNode.children[0], '2026-05-10T12:34:56Z');
+});
+
 test('getElementById performance on large text', () => {
 	// Generate a large XML document
 	const largeDoc = '<root>' + 
