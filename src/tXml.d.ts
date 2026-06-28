@@ -56,6 +56,8 @@ export interface ParseOptions {
 export interface StringifyOptions {
     /** Encode XML entities in text and attribute values (e.g. `&` -> `&amp;`) */
     encodeEntities?: boolean;
+    /** Preserve whitespace in text nodes instead of trimming */
+    keepWhitespace?: boolean;
 }
 
 /**

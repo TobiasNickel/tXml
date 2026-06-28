@@ -323,6 +323,17 @@ test('keepWhitespace option', () => {
 	assert.strictEqual(filtered[1].children[0], '    ');
 });
 
+test('stringify trims whitespace from text nodes by default', () => {
+	const parsed = tXml.parse('<root>  hello world  </root>', { keepWhitespace: true });
+	assert.strictEqual(tXml.stringify(parsed), '<root>hello world</root>');
+});
+
+test('stringify keepWhitespace preserves whitespace in text nodes', () => {
+	const xml = '<root>  hello world  </root>';
+	const parsed = tXml.parse(xml, { keepWhitespace: true });
+	assert.strictEqual(tXml.stringify(parsed, { keepWhitespace: true }), xml);
+});
+
 // ===== ADDITIONAL COMPREHENSIVE TESTS =====
 
 test('parsing arbitrary text/lorem ipsum', () => {
