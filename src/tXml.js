@@ -523,7 +523,8 @@ export function stringify(O, options) {
 
     options = options || {};
     var encodeEntitiesEnabled = !!options.encodeEntities;
-    
+    var keepWhitespace = !!options.keepWhitespace;
+
     var out = '';
 
     /**
@@ -534,7 +535,7 @@ export function stringify(O, options) {
             for (var i = 0; i < nodes.length; i++) {
                 var node = nodes[i];
                 if (typeof node === 'string') {
-                    var textNode = node.trim();
+                    var textNode = keepWhitespace ? node : node.trim();
                     out += encodeEntitiesEnabled ? encodeTextEntities(textNode) : textNode;
                 } else if (node) {
                     writeNode(node);
