@@ -1,14 +1,13 @@
-// @ts-ignore - node:stream types are available in Node.js 18+
-import { Transform } from 'node:stream';
-import { parse } from './tXml.js';
+import { Transform, type TransformCallback } from 'node:stream';
+import { parse, type TNode, type ParseOptions } from './tXml';
 
 /**
  * Find the position directly behind the root opening tag.
  * Returns -1 when more data is needed.
- * @param {string} xml
- * @returns {number}
+ * @param xml 
+ * @returns 
  */
-function detectRootContentOffset(xml) {
+function detectRootContentOffset(xml: string): number {
     let i = 0;
 
     while (i < xml.length) {
@@ -65,28 +64,23 @@ function detectRootContentOffset(xml) {
 
 /**
  * Create a Node.js Transform stream that parses XML chunks
- * @param {number|string} offset - Starting offset; if omitted, root offset is auto-detected
- * @param {import('./tXml.d.ts').ParseOptions} [parseOptions] - Options for the XML parser
- * @returns {Transform} Transform stream that emits parsed XML nodes
+ * @param offset - Starting offset; if omitted, root offset is auto-detected
+ * @param parseOptions? - Options for the XML parser
+ * @returns Transform stream that emits parsed XML nodes
  */
-export function transformStream(offset, parseOptions) {
+export function transformStream(offset?: number | string, parseOptions?: ParseOptions): Transform {
     if (!parseOptions) parseOptions = {};
     let autoDetectOffset = typeof offset === 'undefined';
     if (typeof offset === 'string') {
         offset = offset.length;
     }
 
-    let position = offset || 0;
+    let position: number = offset || 0;
     let data = '';
 
     const stream = new Transform({
         objectMode: true,
-        /**
-         * @param {any} chunk
-         * @param {string} encoding
-         * @param {Function} callback
-         */
-        transform(chunk, encoding, callback) {
+        transform(chunk: any, _encoding: BufferEncoding, callback: TransformCallback) {
             data += chunk;
 
             if (autoDetectOffset) {
@@ -103,7 +97,7 @@ export function transformStream(offset, parseOptions) {
 
             while (true) {
                 position = data.indexOf('<', position) + 1;
-                
+
                 if (!position) {
                     position = lastPos;
                     callback();
@@ -125,7 +119,7 @@ export function transformStream(offset, parseOptions) {
                         return;
                     }
 
-                    if (parseOptions.keepComments) {
+                    if (parseOptions!.keepComments) {
                         this.push(data.substring(position - 1, commentEnd + 3));
                     }
 
@@ -139,7 +133,7 @@ export function transformStream(offset, parseOptions) {
                     pos: position - 1,
                     parseNode: true,
                     setPos: true
-                });
+                }) as TNode & { pos: number };
 
                 // When setPos is true, parse returns an object with pos property
                 // @ts-ignore - res has pos property when setPos option is true
@@ -164,26 +158,22 @@ export function transformStream(offset, parseOptions) {
 /**
  * Create a Web Streams API TransformStream that parses XML chunks
  * Compatible with browsers, Deno, Bun, and modern Node.js
- * @param {number|string} offset - Starting offset; if omitted, root offset is auto-detected
- * @param {import('./tXml.d.ts').ParseOptions} [parseOptions] - Options for the XML parser
- * @returns {TransformStream} Web TransformStream that emits parsed XML nodes
+ * @param offset - Starting offset; if omitted, root offset is auto-detected
+ * @param parseOptions? - Options for the XML parser
+ * @returns Web TransformStream that emits parsed XML nodes
  */
-export function transformWebStream(offset, parseOptions) {
+export function transformWebStream(offset?: number | string, parseOptions?: ParseOptions): TransformStream<string, TNode | string> {
     if (!parseOptions) parseOptions = {};
     let autoDetectOffset = typeof offset === 'undefined';
     if (typeof offset === 'string') {
         offset = offset.length;
     }
 
-    let position = offset || 0;
+    let position: number = offset || 0;
     let data = '';
 
     return new TransformStream({
-        /**
-         * @param {any} chunk
-         * @param {any} controller
-         */
-        transform(chunk, controller) {
+        transform(chunk: string, controller: TransformStreamDefaultController<TNode | string>) {
             data += chunk;
 
             if (autoDetectOffset) {
@@ -199,7 +189,7 @@ export function transformWebStream(offset, parseOptions) {
 
             while (true) {
                 position = data.indexOf('<', position) + 1;
-                
+
                 if (!position) {
                     position = lastPos;
                     return;
@@ -219,7 +209,7 @@ export function transformWebStream(offset, parseOptions) {
                         return;
                     }
 
-                    if (parseOptions.keepComments) {
+                    if (parseOptions!.keepComments) {
                         controller.enqueue(data.substring(position - 1, commentEnd + 3));
                     }
 
@@ -233,10 +223,9 @@ export function transformWebStream(offset, parseOptions) {
                     pos: position - 1,
                     parseNode: true,
                     setPos: true
-                });
+                }) as TNode & { pos: number };
 
                 // When setPos is true, parse returns an object with pos property
-                // @ts-ignore - res has pos property when setPos option is true
                 position = res.pos;
 
                 if (position > (data.length - 1) || position < lastPos) {

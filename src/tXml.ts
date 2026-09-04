@@ -4,14 +4,59 @@
  * I needed a small xmlparser that can be used in a worker.
  */
 
+export type TAttribute = Record<string, string | null>;
+
+export type TSimplifyNode =
+    | string
+    | number
+    | boolean
+    | TSimplifyNode[]
+    | { [key: string]: TSimplifyNode | TAttribute };
+
+export interface TNode {
+    tagName: string;
+    attributes: TAttribute;
+    children: (TNode | string)[];
+    selfClosed?: boolean;
+}
+
+export interface ParseOptions {
+    pos?: number;
+    /**
+     * @deprecated Use selfClosingTags instead
+     */
+    noChildNodes?: string[];
+    selfClosingTags?: string[];
+    setPos?: boolean;
+    keepComments?: boolean;
+    keepWhitespace?: boolean;
+    /** @deprecated Use keepWhitespace instead */
+    keepWhitespaces?: boolean;
+    decodeEntities?: boolean;
+    skipXmlDeclaration?: boolean;
+    simplify?: boolean;
+    parseNode?: boolean;
+    attrName?: string;
+    attrValue?: string;
+    filter?: (node: TNode, index: number, depth: number, path: string) => boolean;
+}
+
+export interface StringifyOptions {
+    encodeEntities?: boolean;
+    keepWhitespace?: boolean;
+    /** @deprecated Use keepWhitespace instead */
+    keepWhitespaces?: boolean;
+    selfCloseEmpty?: boolean;
+}
+
 /**
  * Decode XML entities in text and attribute values.
  * Unknown or malformed entities are left unchanged.
- * @param {string} value
- * @returns {string}
+ * @param value 
+ * @returns 
  */
-function decodeEntities(value) {
-    return value.replace(/&(#x[0-9a-fA-F]+|#\d+|amp|lt|gt|quot|apos);/g, function(match, entity) {
+function decodeEntities(value: string): string {
+    return value.replace(/&(#x[0-9a-fA-F]+|#\d+|amp|lt|gt|quot|apos);/g, function (match: string, entity: string) {
         if (entity === 'amp') return '&';
         if (entity === 'lt') return '<';
         if (entity === 'gt') return '>';
@@ -39,7 +84,7 @@ function decodeEntities(value) {
  * @param {string} value
  * @returns {string}
  */
-function encodeTextEntities(value) {
+function encodeTextEntities(value: string): string {
     return value
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -51,7 +96,7 @@ function encodeTextEntities(value) {
  * @param {string} value
  * @returns {string}
  */
-function encodeAttributeEntities(value) {
+function encodeAttributeEntities(value: string): string {
     return value
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -62,15 +107,15 @@ function encodeAttributeEntities(value) {
 
 /**
  * parseXML / html into a DOM Object. with no validation and some failure tolerance
- * @param {string} S your XML to parse
- * @param {import('./tXml').ParseOptions} [options] all other options:
- * @return {(import('./tXml').TNode | string)[] | any}
+ * @param S your XML to parse
+ * @param options all other options:
+ * @returns 
  */
-export function parse(S, options) {
+export function parse(S: string, options?: ParseOptions): TSimplifyNode | TNode | (TNode | string)[] {
     "txml";
     options = options || {};
 
-    var pos = options.pos || 0;
+    var pos: number = options.pos || 0;
     var keepComments = !!options.keepComments;
     var keepWhitespace = options.keepWhitespace !== undefined ? !!options.keepWhitespace : !!options.keepWhitespaces;
     var decodeEntitiesEnabled = !!options.decodeEntities;
@@ -91,18 +136,17 @@ export function parse(S, options) {
     var closeCornerBracketCC = ']'.charCodeAt(0);
     var questionCC = '?'.charCodeAt(0);
 
-    function isXmlDeclarationTag(tagName) {
+    function isXmlDeclarationTag(tagName: string) {
         return typeof tagName === 'string' && tagName.toLowerCase() === '?xml';
     }
-
 
     /**
      * parsing a list of entries
      * @param {string} tagName
      * @returns {(import('./tXml').TNode | string)[]}
      */
-    function parseChildren(tagName) {
-        var children = [];
+    function parseChildren(tagName: string): (TNode | string)[] {
+        var children: (TNode | string)[] = [];
         while (S[pos]) {
             if (S.charCodeAt(pos) == openBracketCC) {
                 if (S.charCodeAt(pos + 1) === slashCC) {
@@ -195,7 +239,7 @@ export function parse(S, options) {
      *    returns the text outside of texts until the first '<'
      * @returns {string}
      */
-    function parseText() {
+    function parseText(): string {
         var start = pos;
         pos = S.indexOf(openBracket, pos) - 1;
         if (pos === -2)
@@ -203,35 +247,35 @@ export function parse(S, options) {
         var text = S.slice(start, pos + 1);
         return decodeEntitiesEnabled ? decodeEntities(text) : text;
     }
+
     /**
      *    returns text until the first nonAlphabetic letter
      * @returns {string}
      */
     var nameSpacer = '\r\n\t>/= ';
 
-    function parseName() {
+    function parseName(): string {
         var start = pos;
         while (nameSpacer.indexOf(S[pos]) === -1 && S[pos]) {
             pos++;
         }
         return S.slice(start, pos);
     }
+
     /**
      *    is parsing a node, including tagName, Attributes and its children,
      * to parse children it uses the parseChildren again, that makes the parsing recursive
      * @returns {import('./tXml').TNode}
      */
-    var SelfClosingTags = options.selfClosingTags || options.noChildNodes || ['img', 'br', 'input', 'meta', 'link', 'hr'];
+    var SelfClosingTags: string[] = options.selfClosingTags || options.noChildNodes || ['img', 'br', 'input', 'meta', 'link', 'hr'];
 
-    function parseNode() {
+    function parseNode(): TNode {
         pos++;
         const tagName = parseName();
         const isProcessingInstruction = tagName[0] === '?';
         const instructionContentStart = pos;
-        /** @type {Record<string, string | null>} */
-        const attributes = {};
-        /** @type {(import('./tXml').TNode | string)[]} */
-        let children = [];
+        const attributes: TAttribute = {};
+        let children: (TNode | string)[] = [];
 
         // parsing attributes
         while (
@@ -243,8 +287,7 @@ export function parse(S, options) {
             if ((c > 64 && c < 91) || (c > 96 && c < 123)) {
                 //if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
                 var name = parseName();
-                /** @type {string | null} */
-                var value = null;
+                var value: string | null = null;
 
                 // Skip whitespace after the attribute name.
                 while (S.charCodeAt(pos) === 32 || S.charCodeAt(pos) === 9 || S.charCodeAt(pos) === 10 || S.charCodeAt(pos) === 13) {
@@ -330,7 +373,7 @@ export function parse(S, options) {
         } else {
             pos++;
         }
-        const node = {
+        const node: TNode = {
             tagName,
             attributes,
             children,
@@ -353,7 +396,7 @@ export function parse(S, options) {
      * @returns {string}
      */
 
-    function parseString() {
+    function parseString(): string {
         var startChar = S[pos];
         var startpos = pos + 1;
         pos = S.indexOf(startChar, startpos);
@@ -365,7 +408,7 @@ export function parse(S, options) {
      * Find elements by attribute name and value using regex
      * @returns {number}
      */
-    function findElements() {
+    function findElements(): number {
         if (!options || !options.attrName || !options.attrValue) return -1;
         var r = new RegExp('\\s' + options.attrName + '\\s*=[\'"]' + options.attrValue + '[\'"]').exec(S)
         if (r) {
@@ -375,9 +418,8 @@ export function parse(S, options) {
         }
     }
 
-    /** @type {(import('./tXml').TNode | string)[] | import('./tXml').TNode} */
-    var out;
-    
+    var out: TNode | (TNode | string)[];
+
     if (options.attrValue !== undefined) {
         options.attrName = options.attrName || 'id';
         out = [];
@@ -385,7 +427,7 @@ export function parse(S, options) {
         while ((pos = findElements()) !== -1) {
             pos = S.lastIndexOf('<', pos);
             if (pos !== -1) {
-                out.push(parseNode());
+                (out as TNode[]).push(parseNode());
             }
             S = S.substr(pos);
             pos = 0;
@@ -405,16 +447,13 @@ export function parse(S, options) {
 
     if (options.simplify) {
         const arrOut = Array.isArray(out) ? out : [out];
-        // @ts-ignore - simplify returns different type structure
         return simplify(arrOut);
     }
 
     if (options.setPos && typeof out === 'object' && !Array.isArray(out)) {
-        // @ts-ignore - adding pos property dynamically
-        out.pos = pos;
+        (out as TNode & { pos: number }).pos = pos;
     }
 
-    // @ts-ignore - return type varies based on options
     return out;
 }
 
@@ -427,18 +466,17 @@ export function parse(S, options) {
  * @param {(import('./tXml').TNode | string)[]} children the childrenList
  * @returns {Record<string, any> | string}
  */
-export function simplify(children) {
+export function simplify(children: (TNode | string)[] | string): TSimplifyNode {
     if (typeof children === 'string') {
-        return simplify(parse(children));
+        return simplify(parse(children) as TNode[] | string[]);
     }
 
     if (!Array.isArray(children)) {
         throw new TypeError('simplify() expects parsed node array or XML string');
     }
 
-    /** @type {Record<string, any>} */
-    var out = {};
-    
+    var out: { [key: string]: TSimplifyNode } = {};
+
     if (!children.length) {
         return '';
     }
@@ -446,42 +484,44 @@ export function simplify(children) {
     if (children.length === 1 && typeof children[0] == 'string') {
         return children[0];
     }
-    
+
     // map each object
-    children.forEach(function(child) {
+    children.forEach(function (child: TNode | string) {
         if (typeof child !== 'object') {
             return;
         }
         if (!out[child.tagName])
             out[child.tagName] = [];
         var kids = simplify(child.children);
-        out[child.tagName].push(kids);
+        (out[child.tagName] as TSimplifyNode[]).push(kids);
         if (Object.keys(child.attributes).length && typeof kids === 'object' && !Array.isArray(kids)) {
             kids._attributes = child.attributes;
         }
     });
 
     for (var i in out) {
-        if (out[i].length == 1) {
-            out[i] = out[i][0];
+        var val = out[i];
+        if (Array.isArray(val) && val.length == 1) {
+            out[i] = val[0];
         }
     }
 
     return out;
 }
 
-
 /**
  * similar to simplify, but lost less
- *
- * @param {(import('./tXml').TNode | string)[]} children the childrenList
- * @param {Record<string, string | null>} [parentAttributes]
- * @returns {Record<string, any> | string | {_attributes: Record<string, string | null>, value: string}}
+ * 
+ * @param {(TNode | string)[]} children the childrenList
+ * @param {TAttribute} parentAttributes 
+ * @returns {TSimplifyNode | { _attributes: TAttribute; value: string }}
  */
-export function simplifyLostLess(children, parentAttributes = {}) {
-    /** @type {Record<string, any>} */
-    var out = {};
-    
+export function simplifyLostLess(
+    children: (TNode | string)[],
+    parentAttributes: TAttribute = {}
+): TSimplifyNode | { _attributes: TAttribute; value: string } {
+    var out: { [key: string]: TSimplifyNode } = {};
+
     if (!children.length) {
         return out;
     }
@@ -489,19 +529,19 @@ export function simplifyLostLess(children, parentAttributes = {}) {
     if (children.length === 1 && typeof children[0] == 'string') {
         return Object.keys(parentAttributes).length ? {
             _attributes: parentAttributes,
-            value: children[0]
+            value: children[0] as string
         } : children[0];
     }
-    
+
     // map each object
-    children.forEach(function(child) {
+    children.forEach(function (child: TNode | string) {
         if (typeof child !== 'object') {
             return;
         }
         if (!out[child.tagName])
             out[child.tagName] = [];
         var kids = simplifyLostLess(child.children || [], child.attributes);
-        out[child.tagName].push(kids);
+        (out[child.tagName] as TSimplifyNode[]).push(kids);
         if (Object.keys(child.attributes).length && typeof kids === 'object' && !Array.isArray(kids)) {
             kids._attributes = child.attributes;
         }
@@ -512,23 +552,22 @@ export function simplifyLostLess(children, parentAttributes = {}) {
 
 /**
  * behaves the same way as Array.filter, if the filter method return true, the element is in the resultList
- * @param {(import('./tXml').TNode | string)[]} children the children of a node
- * @param {(node: import('./tXml').TNode, index: number, depth: number, path: string) => boolean} f the filter method
- * @param {number} [dept]
- * @param {string} [path]
- * @returns {import('./tXml').TNode[]}
+ * @param {TNode[]} children the children of a node
+ * @param {(node: TNode, index: number, depth: number, path: string) => boolean} f the filter method
+ * @param {number} dept 
+ * @param {string} path 
+ * @returns {TNode[]}
  */
-export function filter(children, f, dept = 0, path = '') {
-    /** @type {import('./tXml').TNode[]} */
-    var out = [];
+export function filter(
+    children: (TNode | string)[],
+    f: (node: TNode, index: number, depth: number, path: string) => boolean,
+    dept: number = 0,
+    path: string = ''
+): TNode[] {
+    var out: TNode[] = [];
 
-    /**
-     * @param {(import('./tXml').TNode | string)[]} nodes
-     * @param {number} depth
-     * @param {string} currentPath
-     */
-    function walk(nodes, depth, currentPath) {
-        nodes.forEach(function(child, i) {
+    function walk(nodes: (TNode | string)[], depth: number, currentPath: string) {
+        nodes.forEach(function (child: TNode | string, i: number) {
             if (typeof child !== 'object') return;
 
             if (f(child, i, depth, currentPath)) {
@@ -549,30 +588,36 @@ export function filter(children, f, dept = 0, path = '') {
  * stringify a previously parsed string object.
  * this is useful,
  *  1. to remove whitespace
- * 2. to recreate xml data, with some changed data.
- * @param {import('./tXml').TNode | (import('./tXml').TNode | string)[]} O the object to Stringify
- * @param {import('./tXml').StringifyOptions} [options] stringify options
+ *  2. to recreate xml data, with some changed data.
+ * @param O the object to Stringify
+ * @param options stringify options
+ * @returns 
  */
-export function stringify(O, options) {
-    if (!O) return '';
+export function stringify(
+    O: TNode | (TNode | string)[],
+    options?: StringifyOptions,
+): string {
+    if (!O) return "";
 
     options = options || {};
     var encodeEntitiesEnabled = !!options.encodeEntities;
-    var keepWhitespace = options.keepWhitespace !== undefined ? !!options.keepWhitespace : !!options.keepWhitespaces;
+    var keepWhitespace =
+        options.keepWhitespace !== undefined
+            ? !!options.keepWhitespace
+            : !!options.keepWhitespaces;
     var selfCloseEmpty = options.selfCloseEmpty !== false;
-    
-    var out = '';
 
-    /**
-     * @param {(import('./tXml').TNode | string)[]} nodes
-     */
-    function writeChildren(nodes) {
+    var out = "";
+
+    function writeChildren(nodes: (TNode | string)[]): void {
         if (nodes) {
             for (var i = 0; i < nodes.length; i++) {
                 var node = nodes[i];
-                if (typeof node === 'string') {
+                if (typeof node === "string") {
                     var textNode = keepWhitespace ? node : node.trim();
-                    out += encodeEntitiesEnabled ? encodeTextEntities(textNode) : textNode;
+                    out += encodeEntitiesEnabled
+                        ? encodeTextEntities(textNode)
+                        : textNode;
                 } else if (node) {
                     writeNode(node);
                 }
@@ -580,18 +625,16 @@ export function stringify(O, options) {
         }
     }
 
-    /**
-     * @param {(import('./tXml').TNode | string)[] | undefined} nodes
-     * @returns {boolean}
-     */
-    function hasSerializableChildren(nodes) {
+    function hasSerializableChildren(
+        nodes: (TNode | string)[],
+    ): boolean {
         if (!nodes || nodes.length === 0) {
             return false;
         }
 
         for (var i = 0; i < nodes.length; i++) {
             var child = nodes[i];
-            if (typeof child === 'string') {
+            if (typeof child === "string") {
                 var textNode = keepWhitespace ? child : child.trim();
                 if (textNode.length > 0) {
                     return true;
@@ -604,68 +647,67 @@ export function stringify(O, options) {
         return false;
     }
 
-    /**
-    * @param {import('./tXml').TNode} N
-     */
-    function writeNode(N) {
+    function writeNode(N: TNode): void {
         if (!N) return;
         out += "<" + N.tagName;
         for (var i in N.attributes) {
             var attrValue = N.attributes[i];
             if (attrValue === null) {
-                out += ' ' + i;
+                out += " " + i;
             } else if (encodeEntitiesEnabled) {
-                out += ' ' + i + '="' + encodeAttributeEntities(attrValue.trim()) + '"';
+                out += " " + i + '="' + encodeAttributeEntities(attrValue.trim()) + '"';
             } else if (attrValue.indexOf('"') === -1) {
-                out += ' ' + i + '="' + attrValue.trim() + '"';
+                out += " " + i + '="' + attrValue.trim() + '"';
             } else {
-                out += ' ' + i + "='" + attrValue.trim() + "'";
+                out += " " + i + "='" + attrValue.trim() + "'";
             }
         }
-        if (N.tagName[0] === '?') {
+        if (N.tagName[0] === "?") {
             if (N.children && N.children.length) {
-                var instructionPayload = N.children.filter(function(child) {
-                    return typeof child === 'string';
-                }).join(' ').trim();
+                var instructionPayload = N.children
+                    .filter(function (child: TNode | string) {
+                        return typeof child === "string";
+                    })
+                    .join(" ")
+                    .trim();
                 if (instructionPayload.length > 0) {
-                    out += ' ' + instructionPayload;
+                    out += " " + instructionPayload;
                 }
             }
-            out += '?>';
+            out += "?>";
             return;
         }
 
-        if (N.selfClosed === true) {
-            out += '/>';
+        if ((N as any).selfClosed === true) {
+            out += "/>";
             return;
         }
 
         if (selfCloseEmpty && !hasSerializableChildren(N.children)) {
-            out += '/>';
+            out += "/>";
             return;
         }
 
-        out += '>';
+        out += ">";
         writeChildren(N.children);
-        out += '</' + N.tagName + '>';
+        out += "</" + N.tagName + ">";
     }
     writeChildren(Array.isArray(O) ? O : [O]);
 
     return out;
 }
 
-
 /**
  * use this method to read the text content, of some node.
  * It is great if you have mixed content like:
  * this text has some <b>big</b> text and a <a href=''>link</a>
- * @param {import('./tXml').TNode | (import('./tXml').TNode | string)[] | string} tDom
- * @return {string}
+ * @param tDom 
+ * @returns 
  */
-export function toContentString(tDom) {
+export function toContentString(tDom: TNode | (TNode | string)[] | string): string {
     if (Array.isArray(tDom)) {
         var out = '';
-        tDom.forEach(function(e) {
+        tDom.forEach(function (e: TNode | string) {
             out += ' ' + toContentString(e);
             out = out.trim();
         });
@@ -677,31 +719,26 @@ export function toContentString(tDom) {
     }
 }
 
-/**
- * @param {string} S
- * @param {string} id
- * @param {boolean} [simplified]
- * @returns {import('./tXml').TNode | Record<string, any> | string | undefined}
- */
-export function getElementById(S, id, simplified) {
+export function getElementById(S: string, id: string, simplified?: boolean): TNode | TSimplifyNode {
     var out = parse(S, {
         attrValue: id
     });
-    return simplified ? simplify(out) : out[0];
+    return simplified ? simplify(out as string | TNode[] | string[]) : (out as TSimplifyNode[])[0];
 }
 
 /**
- * @param {string} S
- * @param {string} classname
- * @param {boolean} [simplified]
- * @returns {(import('./tXml').TNode | string)[] | Record<string, any> | string}
+ * 
+ * @param S 
+ * @param classname 
+ * @param simplified 
+ * @returns 
  */
-export function getElementsByClassName(S, classname, simplified) {
+export function getElementsByClassName(S: string, classname: string, simplified?: boolean): TNode[] | TSimplifyNode {
     const out = parse(S, {
         attrName: 'class',
         attrValue: '[a-zA-Z0-9- ]*' + classname + '[a-zA-Z0-9- ]*'
     });
-    return simplified ? simplify(out) : out;
+    return simplified ? simplify(out as string | string[] | TNode[]) : out as TSimplifyNode;
 }
 
 /**
@@ -718,7 +755,7 @@ export function getElementsByClassName(S, classname, simplified) {
  *   }
  * });
  */
-export function isTextNode(node) {
+export function isTextNode(node: TNode | string): node is string {
     return typeof node === 'string';
 }
 
@@ -736,6 +773,6 @@ export function isTextNode(node) {
  *   }
  * });
  */
-export function isElementNode(node) {
+export function isElementNode(node: TNode | string | null | undefined): node is TNode {
     return typeof node === 'object' && node !== null && 'tagName' in node;
 }

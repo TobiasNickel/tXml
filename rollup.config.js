@@ -1,15 +1,15 @@
 import terser from '@rollup/plugin-terser';
+import typescript from '@rollup/plugin-typescript';
 
 const config = {
   dir: 'dist',
-  // Small hack to lowercase tXml in bundle
   sanitizeFileName: (f) => f.includes('tXml') ? f.toLowerCase() : f,
 };
 
 export default [
   // Main bundle (all exports)
   {
-    input: 'src/index.js',
+    input: 'src/index.ts',
     output: [
       {
         ...config,
@@ -23,11 +23,16 @@ export default [
         entryFileNames: '[name].mjs',
       },
     ],
-    external: ['node:stream']
+    external: ['node:stream'],
+    plugins: [
+      typescript({
+        tsconfig: './tsconfig.json',
+      }),
+    ],
   },
   // Parser only (tree-shakeable, no Node.js dependencies)
   {
-    input: 'src/tXml.js',
+    input: 'src/tXml.ts',
     output: [
       {
         ...config,
@@ -48,12 +53,15 @@ export default [
       }
     ],
     plugins: [
-      terser()
-    ]
+      typescript({
+        tsconfig: './tsconfig.json',
+      }),
+      terser(),
+    ],
   },
   // Transform stream
   {
-    input: 'src/transformStream.js',
+    input: 'src/transformStream.ts',
     output: [
       {
         ...config,
@@ -67,6 +75,11 @@ export default [
         entryFileNames: '[name].mjs',
       },
     ],
-    external: ['node:stream', './tXml.js']
+    external: ['node:stream'],
+    plugins: [
+      typescript({
+        tsconfig: './tsconfig.json',
+      }),
+    ],
   }
 ];

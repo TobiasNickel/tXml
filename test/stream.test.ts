@@ -1,4 +1,5 @@
-import * as tXml from '../src/index.js';
+import * as tXml from '../src/index';
+import type { TNode } from '../src/index';
 import assert from 'node:assert';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -37,7 +38,7 @@ test('stream: two comments and one element with keepComments', async () => {
 
 test('stream: do not find unclosed comments', async () => {
 	const xmlStreamCommentOnlySvg = fs.createReadStream(files.commentOnly)
-		.pipe(tXml.transformStream('', { keepComments: 0 }));
+		.pipe(tXml.transformStream('', { keepComments: 0 as any }));
 	let numberOfElements = 0;
 	for await (let element of xmlStreamCommentOnlySvg) {
 		numberOfElements++;
@@ -48,16 +49,15 @@ test('stream: do not find unclosed comments', async () => {
 test('stream: auto-detect offset when omitted', async () => {
 	const xml = '<root><item id="1">a</item><item id="2">b</item></root>';
 	const xmlStream = Readable.from([xml]).pipe(tXml.transformStream());
-	const tags = [];
+	const tags: string[] = [];
 
 	for await (let element of xmlStream) {
-		tags.push(element.tagName);
+		tags.push((element as TNode).tagName);
 	}
 
 	assert.deepStrictEqual(tags, ['item', 'item'], 'expected child elements when offset is omitted');
 });
 
-// Only run if long.xml exists
 test('stream: long XML file', { skip: !fs.existsSync(join(__dirname, '../long.xml')) }, async () => {
 	const xmlStreamLongXML = fs.createReadStream(join(__dirname, '../long.xml'))
 		.pipe(tXml.transformStream(5));

@@ -1,4 +1,5 @@
-import * as tXml from '../src/index.js';
+import * as tXml from '../src/index';
+import type { TNode } from '../src/index';
 import assert from 'node:assert';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -111,7 +112,7 @@ test('ignore doctype declaration', () => {
 test('filter option', () => {
 	assert.deepStrictEqual(
 		tXml.parse('<test><cc></cc><cc></cc></test>', {
-			filter: (element) => element.tagName.toLowerCase() === 'cc'
+			filter: (element: TNode) => element.tagName.toLowerCase() === 'cc'
 		}),
 		[
 			{ tagName: 'cc', attributes: {}, children: [] },
@@ -206,8 +207,8 @@ test('roundtrip preserves mixed empty tag styles when selfCloseEmpty is false', 
 });
 
 test('selfClosed parse flag is non-enumerable for compatibility', () => {
-	const [root] = tXml.parse('<root><selfclosed/></root>');
-	const child = root.children[0];
+	const [root] = tXml.parse('<root><selfclosed/></root>') as TNode[];
+	const child = root.children[0] as TNode;
 
 	assert.strictEqual(typeof child, 'object');
 	assert.strictEqual(child.selfClosed, true);
@@ -292,15 +293,14 @@ test('simplifyLostLess string list', () => {
 });
 
 test('simplifyLostLess ignores non-objects', () => {
-	assert.deepStrictEqual(tXml.simplifyLostLess(['1', 2]), {});
+	assert.deepStrictEqual(tXml.simplifyLostLess(['1', 2 as any]), {});
 });
 
 test('filter allows nodes without children', () => {
-	assert.deepStrictEqual(tXml.filter([{}], () => true), [{}]);
+	assert.deepStrictEqual(tXml.filter([{} as any], () => true), [{} as any]);
 });
 
 test('simplify option with parse', () => {
-	// This should run without error: Issue #24
 	tXml.parse('<?xml version="1.0"?><methodCall>TEST</methodCall>', { simplify: true });
 	assert.ok(true);
 });
@@ -362,12 +362,10 @@ test('keepWhitespace option', () => {
 	const wordpadDoc = fs.readFileSync(files.wordpadDocxDocument).toString();
 	const filtered = tXml.filter(
 		tXml.parse(wordpadDoc, { keepWhitespace: true }),
-		(n) => n.tagName === 'w:t'
+		(n: TNode) => n.tagName === 'w:t'
 	);
-	assert.strictEqual(filtered[1].children[0], '    ');
+	assert.strictEqual((filtered[1].children[0] as string), '    ');
 });
-
-// ===== ADDITIONAL COMPREHENSIVE TESTS =====
 
 test('parsing arbitrary text/lorem ipsum', () => {
 	const loremIpsum = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
@@ -392,7 +390,7 @@ test('parsing node with duplicate attribute (last wins)', () => {
 		attributes: { att: 'third' },
 		children: []
 	}]);
-	assert.strictEqual(result[0].attributes.att, 'third', 'last attribute value should win');
+	assert.strictEqual((result[0] as TNode).attributes.att, 'third', 'last attribute value should win');
 });
 
 test('parsing node with many attributes', () => {
@@ -407,19 +405,20 @@ test('parsing node with many attributes', () => {
 		'aria-label="Test Label" ' +
 		'tabindex="0" ' +
 		'role="button">';
-	
+
 	const result = tXml.parse(manyAttrs);
+	const el = result[0] as TNode;
 	assert.strictEqual(result.length, 1);
-	assert.strictEqual(result[0].attributes.id, 'test-id');
-	assert.strictEqual(result[0].attributes.class, 'test-class another-class');
-	assert.strictEqual(result[0].attributes['data-value'], '123');
-	assert.strictEqual(result[0].attributes['data-name'], 'example');
-	assert.strictEqual(result[0].attributes.style, 'color: red; background: blue;');
-	assert.strictEqual(result[0].attributes.onclick, 'handleClick()');
-	assert.strictEqual(result[0].attributes.disabled, null);
-	assert.strictEqual(result[0].attributes['aria-label'], 'Test Label');
-	assert.strictEqual(result[0].attributes.tabindex, '0');
-	assert.strictEqual(result[0].attributes.role, 'button');
+	assert.strictEqual(el.attributes.id, 'test-id');
+	assert.strictEqual(el.attributes.class, 'test-class another-class');
+	assert.strictEqual(el.attributes['data-value'], '123');
+	assert.strictEqual(el.attributes['data-name'], 'example');
+	assert.strictEqual(el.attributes.style, 'color: red; background: blue;');
+	assert.strictEqual(el.attributes.onclick, 'handleClick()');
+	assert.strictEqual(el.attributes.disabled, null);
+	assert.strictEqual(el.attributes['aria-label'], 'Test Label');
+	assert.strictEqual(el.attributes.tabindex, '0');
+	assert.strictEqual(el.attributes.role, 'button');
 });
 
 test('parsing example HTML document', () => {
@@ -451,15 +450,13 @@ test('parsing example HTML document', () => {
 	const result = tXml.parse(html);
 	assert(Array.isArray(result));
 	assert(result.length > 0);
-	
-	// Find the html element
-	const htmlElement = result.find(el => typeof el === 'object' && el.tagName === 'html');
+
+	const htmlElement = result.find((el): el is TNode => typeof el === 'object' && el.tagName === 'html');
 	assert(htmlElement, 'html element should exist');
 	assert.strictEqual(htmlElement.attributes.lang, 'en');
-	
-	// Check that structure is preserved
-	const head = htmlElement.children.find(el => typeof el === 'object' && el.tagName === 'head');
-	const body = htmlElement.children.find(el => typeof el === 'object' && el.tagName === 'body');
+
+	const head = htmlElement.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'head');
+	const body = htmlElement.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'body');
 	assert(head, 'head element should exist');
 	assert(body, 'body element should exist');
 });
@@ -473,18 +470,18 @@ test('parsing SVG example', () => {
 </svg>`;
 
 	const result = tXml.parse(svg);
+	const svgEl = result[0] as TNode;
 	assert.strictEqual(result.length, 1);
-	assert.strictEqual(result[0].tagName, 'svg');
-	assert.strictEqual(result[0].attributes.width, '100');
-	assert.strictEqual(result[0].attributes.height, '100');
-	assert.strictEqual(result[0].attributes.xmlns, 'http://www.w3.org/2000/svg');
-	
-	// Check children
-	const circle = result[0].children.find(el => typeof el === 'object' && el.tagName === 'circle');
-	const rect = result[0].children.find(el => typeof el === 'object' && el.tagName === 'rect');
-	const line = result[0].children.find(el => typeof el === 'object' && el.tagName === 'line');
-	const text = result[0].children.find(el => typeof el === 'object' && el.tagName === 'text');
-	
+	assert.strictEqual(svgEl.tagName, 'svg');
+	assert.strictEqual(svgEl.attributes.width, '100');
+	assert.strictEqual(svgEl.attributes.height, '100');
+	assert.strictEqual(svgEl.attributes.xmlns, 'http://www.w3.org/2000/svg');
+
+	const circle = svgEl.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'circle');
+	const rect = svgEl.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'rect');
+	const line = svgEl.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'line');
+	const text = svgEl.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'text');
+
 	assert(circle, 'circle should exist');
 	assert(rect, 'rect should exist');
 	assert(line, 'line should exist');
@@ -493,7 +490,6 @@ test('parsing SVG example', () => {
 });
 
 test('parsing RSS feed structure (simple example)', () => {
-	// Use a simpler RSS example - note: link tags need closing tags in RSS
 	const simpleRss = `<?xml version="1.0"?>
 <rss version="2.0">
 <channel>
@@ -514,27 +510,23 @@ test('parsing RSS feed structure (simple example)', () => {
 	</item>
 </channel>
 </rss>`;
-	
+
 	const result = tXml.parse(simpleRss);
 	assert(Array.isArray(result));
-	
-	// Find the rss element
-	const rss = result.find(el => typeof el === 'object' && el.tagName === 'rss');
+
+	const rss = result.find((el): el is TNode => typeof el === 'object' && el.tagName === 'rss');
 	assert(rss, 'rss element should exist');
 	assert.strictEqual(rss.attributes.version, '2.0');
-	
-	// Find channel
-	const channel = rss.children.find(el => typeof el === 'object' && el.tagName === 'channel');
+
+	const channel = rss.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'channel');
 	assert(channel, 'channel element should exist');
-	
-	// Check for items
-	const items = channel.children.filter(el => typeof el === 'object' && el.tagName === 'item');
+
+	const items = channel.children.filter((el): el is TNode => typeof el === 'object' && el.tagName === 'item');
 	assert.strictEqual(items.length, 2, 'should have 2 items');
-	
-	// Check first item structure
+
 	const firstItem = items[0];
-	const title = firstItem.children.find(el => typeof el === 'object' && el.tagName === 'title');
-	const url = firstItem.children.find(el => typeof el === 'object' && el.tagName === 'url');
+	const title = firstItem.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'title');
+	const url = firstItem.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'url');
 	assert(title, 'item should have title');
 	assert(url, 'item should have url');
 	assert.strictEqual(title.children[0], 'First Item');
@@ -553,50 +545,46 @@ test('parsing GPX trkpt with time element', () => {
 </gpx>`;
 
 	const parsed = tXml.parse(gpx);
-	const gpxNode = parsed.find(el => typeof el === 'object' && el.tagName === 'gpx');
+	const gpxNode = parsed.find((el): el is TNode => typeof el === 'object' && el.tagName === 'gpx');
 	assert(gpxNode, 'gpx element should exist');
 
-	const trk = gpxNode.children.find(el => typeof el === 'object' && el.tagName === 'trk');
+	const trk = gpxNode.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'trk');
 	assert(trk, 'trk element should exist');
 
-	const trkseg = trk.children.find(el => typeof el === 'object' && el.tagName === 'trkseg');
+	const trkseg = trk.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'trkseg');
 	assert(trkseg, 'trkseg element should exist');
 
-	const trkpt = trkseg.children.find(el => typeof el === 'object' && el.tagName === 'trkpt');
-	assert(trkpt, 'trkpt element should exist');
+	const trkpt = trkseg.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'trkpt');
+	assert(trkpt, 'trkpt should exist');
 	assert.strictEqual(trkpt.attributes.lat, '48.208174');
 	assert.strictEqual(trkpt.attributes.lon, '16.373819');
 
-	const timeNode = trkpt.children.find(el => typeof el === 'object' && el.tagName === 'time');
+	const timeNode = trkpt.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'time');
 	assert(timeNode, 'time element should exist inside trkpt');
 	assert.strictEqual(timeNode.children[0], '2026-05-10T12:34:56Z');
 });
 
 test('getElementById performance on large text', () => {
-	// Generate a large XML document
-	const largeDoc = '<root>' + 
-		Array.from({ length: 1000 }, (_, i) => 
+	const largeDoc = '<root>' +
+		Array.from({ length: 1000 }, (_, i) =>
 			`<item id="item${i}"><name>Item ${i}</name><value>${i * 10}</value></item>`
 		).join('') +
 		'</root>';
-	
-	// Test getElementById (should be faster as it uses regex search)
+
 	const startGetById = Date.now();
-	const result = tXml.getElementById(largeDoc, 'item999');
+	const result = tXml.getElementById(largeDoc, 'item999') as TNode;
 	const timeGetById = Date.now() - startGetById;
-	
+
 	assert(result, 'getElementById should find the element');
 	assert.strictEqual(result.attributes.id, 'item999');
-	
-	// Test full parse (should be slower)
+
 	const startFullParse = Date.now();
 	const fullParsed = tXml.parse(largeDoc);
 	const timeFullParse = Date.now() - startFullParse;
-	
+
 	assert(Array.isArray(fullParsed), 'should parse full document');
-	
-	// getElementById should be faster than full parse
-	assert(timeGetById < timeFullParse, 
+
+	assert(timeGetById < timeFullParse,
 		`getElementById (${timeGetById}ms) should be faster than full parse (${timeFullParse}ms)`);
 });
 
@@ -605,12 +593,13 @@ test('parsing XML with namespaces', () => {
 		<custom:element custom:attr="value">Content</custom:element>
 		<regular>Regular content</regular>
 	</root>`;
-	
+
 	const result = tXml.parse(xml);
-	assert.strictEqual(result[0].tagName, 'root');
-	assert.strictEqual(result[0].attributes['xmlns:custom'], 'http://example.com/custom');
-	
-	const customElement = result[0].children.find(el => 
+	const root = result[0] as TNode;
+	assert.strictEqual(root.tagName, 'root');
+	assert.strictEqual(root.attributes['xmlns:custom'], 'http://example.com/custom');
+
+	const customElement = root.children.find((el): el is TNode =>
 		typeof el === 'object' && el.tagName === 'custom:element'
 	);
 	assert(customElement, 'namespaced element should exist');
@@ -622,38 +611,38 @@ test('parsing deeply nested structure', () => {
 	const openTags = Array.from({ length: depth }, (_, i) => `<level${i}>`).join('');
 	const closeTags = Array.from({ length: depth }, (_, i) => `</level${depth - 1 - i}>`).join('');
 	const nested = openTags + 'deepest content' + closeTags;
-	
+
 	const result = tXml.parse(nested);
 	assert.strictEqual(result.length, 1);
-	
-	// Navigate to the deepest level
-	let current = result[0];
+
+	let current = result[0] as TNode;
 	for (let i = 1; i < depth; i++) {
 		assert.strictEqual(current.children.length, 1);
-		current = current.children[0];
+		current = current.children[0] as TNode;
 		assert.strictEqual(current.tagName, `level${i}`);
 	}
 	assert.strictEqual(current.children[0], 'deepest content');
 });
 
 test('parsing with special characters in attributes', () => {
-	const xml = `<element 
+	const xml = `<element
 		attr1="value with &amp; ampersand"
 		attr2="value with &lt; less than"
 		attr3="value with &gt; greater than"
 		attr4="value with &quot; quotes"
 		attr5="value with &apos; apostrophe">
 	</element>`;
-	
+
 	const result = tXml.parse(xml);
-	assert.strictEqual(result[0].attributes.attr1, 'value with &amp; ampersand');
-	assert.strictEqual(result[0].attributes.attr2, 'value with &lt; less than');
-	assert.strictEqual(result[0].attributes.attr3, 'value with &gt; greater than');
+	const el = result[0] as TNode;
+	assert.strictEqual(el.attributes.attr1, 'value with &amp; ampersand');
+	assert.strictEqual(el.attributes.attr2, 'value with &lt; less than');
+	assert.strictEqual(el.attributes.attr3, 'value with &gt; greater than');
 });
 
 test('parse decodeEntities option decodes text and attributes', () => {
 	const xml = '<msg a="x &amp; y" b="&#62;" c="&#x3C;">a &lt; b &amp;&amp; c &gt; d</msg>';
-	const [msg] = tXml.parse(xml, { decodeEntities: true });
+	const [msg] = tXml.parse(xml, { decodeEntities: true }) as TNode[];
 
 	assert.strictEqual(msg.attributes.a, 'x & y');
 	assert.strictEqual(msg.attributes.b, '>');
@@ -663,7 +652,7 @@ test('parse decodeEntities option decodes text and attributes', () => {
 
 test('parse decodeEntities keeps unknown entities unchanged', () => {
 	const xml = '<msg attr="x &unknown; y">a &unknown; b</msg>';
-	const [msg] = tXml.parse(xml, { decodeEntities: true });
+	const [msg] = tXml.parse(xml, { decodeEntities: true }) as TNode[];
 
 	assert.strictEqual(msg.attributes.attr, 'x &unknown; y');
 	assert.strictEqual(msg.children[0], 'a &unknown; b');
@@ -672,15 +661,16 @@ test('parse decodeEntities keeps unknown entities unchanged', () => {
 test('parsing empty and self-closing tags', () => {
 	const xml = '<root><empty></empty><selfclose /><selfclose/><another /></root>';
 	const result = tXml.parse(xml);
-	
-	assert.strictEqual(result[0].tagName, 'root');
-	assert.strictEqual(result[0].children.length, 4);
-	assert.strictEqual(result[0].children[0].selfClosed, undefined);
-	assert.strictEqual(result[0].children[1].selfClosed, true);
-	assert.strictEqual(result[0].children[2].selfClosed, true);
-	assert.strictEqual(result[0].children[3].selfClosed, true);
-	
-	result[0].children.forEach(child => {
+	const root = result[0] as TNode;
+
+	assert.strictEqual(root.tagName, 'root');
+	assert.strictEqual(root.children.length, 4);
+	assert.strictEqual((root.children[0] as TNode).selfClosed, undefined);
+	assert.strictEqual((root.children[1] as TNode).selfClosed, true);
+	assert.strictEqual((root.children[2] as TNode).selfClosed, true);
+	assert.strictEqual((root.children[3] as TNode).selfClosed, true);
+
+	root.children.forEach(child => {
 		if (typeof child === 'object') {
 			assert.deepStrictEqual(child.children, []);
 		}
@@ -690,11 +680,12 @@ test('parsing empty and self-closing tags', () => {
 test('parsing with mixed quoted attributes', () => {
 	const xml = `<element single='value1' double="value2" mixed='has "quotes"' other="has 'quotes'"/>`;
 	const result = tXml.parse(xml);
-	
-	assert.strictEqual(result[0].attributes.single, 'value1');
-	assert.strictEqual(result[0].attributes.double, 'value2');
-	assert.strictEqual(result[0].attributes.mixed, 'has "quotes"');
-	assert.strictEqual(result[0].attributes.other, "has 'quotes'");
+	const el = result[0] as TNode;
+
+	assert.strictEqual(el.attributes.single, 'value1');
+	assert.strictEqual(el.attributes.double, 'value2');
+	assert.strictEqual(el.attributes.mixed, 'has "quotes"');
+	assert.strictEqual(el.attributes.other, "has 'quotes'");
 });
 
 test('parsing JSON example within XML', () => {
@@ -702,12 +693,13 @@ test('parsing JSON example within XML', () => {
 		<json>{"name": "test", "value": 123, "nested": {"key": "value"}}</json>
 		<other>content</other>
 	</data>`;
-	
+
 	const result = tXml.parse(xml);
-	const jsonElement = result[0].children.find(el => typeof el === 'object' && el.tagName === 'json');
-	
+	const root = result[0] as TNode;
+	const jsonElement = root.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'json');
+
 	assert(jsonElement);
-	const jsonContent = jsonElement.children[0];
+	const jsonContent = jsonElement.children[0] as string;
 	const parsed = JSON.parse(jsonContent);
 	assert.strictEqual(parsed.name, 'test');
 	assert.strictEqual(parsed.value, 123);
@@ -717,62 +709,55 @@ test('parsing JSON example within XML', () => {
 test('parsing XML with processing instructions', () => {
 	const xml = '<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="style.xsl"?><root>content</root>';
 	const result = tXml.parse(xml);
-	
-	// Processing instructions should be parsed
+
 	assert(Array.isArray(result));
-	const root = result.find(el => typeof el === 'object' && el.tagName === 'root');
+	const root = result.find((el): el is TNode => typeof el === 'object' && el.tagName === 'root');
 	assert(root, 'root element should exist');
 });
 
 test('performance comparison: getElementById vs full parse for large document', () => {
-	// Create a very large document (10000 elements)
 	const elementsCount = 10000;
 	const targetId = 'target-element-9999';
-	
+
 	let largeXml = '<root>';
 	for (let i = 0; i < elementsCount; i++) {
 		const id = i === 9999 ? targetId : `element-${i}`;
 		largeXml += `<item id="${id}"><data>Content ${i}</data></item>`;
 	}
 	largeXml += '</root>';
-	
-	// Measure getElementById
+
 	const start1 = process.hrtime.bigint();
-	const foundElement = tXml.getElementById(largeXml, targetId);
+	const foundElement = tXml.getElementById(largeXml, targetId) as TNode;
 	const end1 = process.hrtime.bigint();
-	const getByIdTime = Number(end1 - start1) / 1000000; // Convert to milliseconds
-	
+	const getByIdTime = Number(end1 - start1) / 1000000;
+
 	assert(foundElement, 'getElementById should find element');
 	assert.strictEqual(foundElement.attributes.id, targetId);
-	
-	// Measure full parse and search
+
 	const start2 = process.hrtime.bigint();
 	const parsed = tXml.parse(largeXml);
-	const rootElement = parsed.find(el => typeof el === 'object' && el.tagName === 'root');
-	const foundInParse = rootElement.children.find(el => 
+	const rootElement = parsed.find((el): el is TNode => typeof el === 'object' && el.tagName === 'root');
+	assert(rootElement, 'root element should exist');
+	const foundInParse = rootElement.children.find((el): el is TNode =>
 		typeof el === 'object' && el.attributes.id === targetId
 	);
 	const end2 = process.hrtime.bigint();
-	const fullParseTime = Number(end2 - start2) / 1000000; // Convert to milliseconds
-	
+	const fullParseTime = Number(end2 - start2) / 1000000;
+
 	assert(foundInParse, 'full parse should find element');
-	
-	// Log performance comparison
+
 	console.log(`\n  Performance comparison for ${elementsCount} elements:`);
 	console.log(`    getElementById: ${getByIdTime.toFixed(2)}ms`);
 	console.log(`    Full parse:     ${fullParseTime.toFixed(2)}ms`);
 	console.log(`    Speedup:        ${(fullParseTime / getByIdTime).toFixed(2)}x faster`);
-	
-	// getElementById should be significantly faster
-	assert(getByIdTime < fullParseTime, 
+
+	assert(getByIdTime < fullParseTime,
 		`getElementById should be faster than full parse (${getByIdTime.toFixed(2)}ms vs ${fullParseTime.toFixed(2)}ms)`);
 });
 
 test('parsing malformed HTML throws on mismatched tags', () => {
-	// tXml correctly throws errors on mismatched closing tags
 	const malformed = '<div><p>Unclosed paragraph<div>Another div</div></div>';
-	
-	// Should throw because <p> is not properly closed before <div>
+
 	assert.throws(() => {
 		tXml.parse(malformed);
 	}, /Unexpected close tag/);
@@ -781,10 +766,11 @@ test('parsing malformed HTML throws on mismatched tags', () => {
 test('parsing with unicode and emoji', () => {
 	const xml = '<message lang="多语言">Hello 世界 🌍 🚀 ❤️</message>';
 	const result = tXml.parse(xml);
-	
-	assert.strictEqual(result[0].tagName, 'message');
-	assert.strictEqual(result[0].attributes.lang, '多语言');
-	assert.strictEqual(result[0].children[0], 'Hello 世界 🌍 🚀 ❤️');
+
+	const el = result[0] as TNode;
+	assert.strictEqual(el.tagName, 'message');
+	assert.strictEqual(el.attributes.lang, '多语言');
+	assert.strictEqual(el.children[0], 'Hello 世界 🌍 🚀 ❤️');
 });
 
 test('stringify with duplicate attributes preserves last value', () => {
@@ -793,7 +779,7 @@ test('stringify with duplicate attributes preserves last value', () => {
 		attributes: { id: 'final-value' },
 		children: []
 	}];
-	
+
 	const result = tXml.stringify(parsed);
 	assert.strictEqual(result, '<test id="final-value"/>');
 });
@@ -882,29 +868,26 @@ test('issue #52: simplify handles valid XML string with declaration', () => {
 	const fromParsed = tXml.simplify(tXml.parse(xml));
 
 	assert.deepStrictEqual(fromString, fromParsed);
-	assert.strictEqual(fromString.getschedulesforgenchannellist.schedules.account, '0');
-	assert.strictEqual(fromString.getschedulesforgenchannellist.schedules.schedule.category, 'Vígjáték');
+	assert.strictEqual((fromString as any).getschedulesforgenchannellist.schedules.account, '0');
+	assert.strictEqual((fromString as any).getschedulesforgenchannellist.schedules.schedule.category, 'Vígjáték');
 });
 
 test('issue #45: filter option works recursively on parse, distinct from array filter', () => {
 	const xml = '<root><node id="1" type="item"/><node id="2" type="other"/><container><node id="3" type="item"/></container></root>';
-	
-	// parse option filter: recursive search on all nodes
+
 	const itemsByParseFilter = tXml.parse(xml, {
-		filter: (node) => node.tagName === 'node' && node.attributes.type === 'item'
-	});
+		filter: (node: TNode) => node.tagName === 'node' && node.attributes.type === 'item'
+	}) as TNode[];
 	assert.strictEqual(itemsByParseFilter.length, 2);
 	assert.strictEqual(itemsByParseFilter[0].attributes.id, '1');
 	assert.strictEqual(itemsByParseFilter[1].attributes.id, '3');
-	
-	// Array.filter on parse result: only filters top-level array (usually root(s))
+
 	const itemsByArrayFilter = tXml.parse(xml).filter(
-		(node) => typeof node === 'object' && node.tagName === 'node'
+		(node): node is TNode => typeof node === 'object' && node.tagName === 'node'
 	);
-	assert.strictEqual(itemsByArrayFilter.length, 0); // root is not a 'node' tag
-	
-	// getElementById: searches attribute by name (default 'id')
-	const byId = tXml.getElementById(xml, '2');
+	assert.strictEqual(itemsByArrayFilter.length, 0);
+
+	const byId = tXml.getElementById(xml, '2') as TNode;
 	assert.strictEqual(byId.tagName, 'node');
 	assert.strictEqual(byId.attributes.id, '2');
 });
@@ -922,14 +905,15 @@ test('parsing complex SVG with paths and transforms', () => {
 			<circle cx="0" cy="0" r="20" fill="green"/>
 		</g>
 	</svg>`;
-	
+
 	const result = tXml.parse(complexSvg);
-	assert.strictEqual(result[0].tagName, 'svg');
-	
-	const defs = result[0].children.find(el => typeof el === 'object' && el.tagName === 'defs');
-	const path = result[0].children.find(el => typeof el === 'object' && el.tagName === 'path');
-	const g = result[0].children.find(el => typeof el === 'object' && el.tagName === 'g');
-	
+	const svgEl = result[0] as TNode;
+	assert.strictEqual(svgEl.tagName, 'svg');
+
+	const defs = svgEl.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'defs');
+	const path = svgEl.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'path');
+	const g = svgEl.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'g');
+
 	assert(defs, 'should have defs element');
 	assert(path, 'should have path element');
 	assert(g, 'should have g element');
@@ -959,12 +943,13 @@ test('parsing MathML example', () => {
 			</mfrac>
 		</mrow>
 	</math>`;
-	
+
 	const result = tXml.parse(mathml);
-	assert.strictEqual(result[0].tagName, 'math');
-	assert.strictEqual(result[0].attributes.xmlns, 'http://www.w3.org/1998/Math/MathML');
-	
-	const mrow = result[0].children.find(el => typeof el === 'object' && el.tagName === 'mrow');
+	const mathEl = result[0] as TNode;
+	assert.strictEqual(mathEl.tagName, 'math');
+	assert.strictEqual(mathEl.attributes.xmlns, 'http://www.w3.org/1998/Math/MathML');
+
+	const mrow = mathEl.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'mrow');
 	assert(mrow, 'should have mrow element');
 });
 
@@ -983,16 +968,16 @@ test('parsing SOAP envelope example', () => {
 		</m:GetStockPrice>
 	</soap:Body>
 </soap:Envelope>`;
-	
+
 	const result = tXml.parse(soap);
-	const envelope = result.find(el => typeof el === 'object' && el.tagName === 'soap:Envelope');
-	
+	const envelope = result.find((el): el is TNode => typeof el === 'object' && el.tagName === 'soap:Envelope');
+
 	assert(envelope, 'should have soap:Envelope');
 	assert.strictEqual(envelope.attributes['xmlns:soap'], 'http://www.w3.org/2003/05/soap-envelope');
-	
-	const header = envelope.children.find(el => typeof el === 'object' && el.tagName === 'soap:Header');
-	const body = envelope.children.find(el => typeof el === 'object' && el.tagName === 'soap:Body');
-	
+
+	const header = envelope.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'soap:Header');
+	const body = envelope.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'soap:Body');
+
 	assert(header, 'should have header');
 	assert(body, 'should have body');
 });
@@ -1000,10 +985,10 @@ test('parsing SOAP envelope example', () => {
 test('parsing HTML5 doctype', () => {
 	const html5 = '<!DOCTYPE html><html><head><title>Test</title></head><body><h1>Hello</h1></body></html>';
 	const result = tXml.parse(html5);
-	
+
 	assert.strictEqual(result[0], '!DOCTYPE html');
-	
-	const html = result.find(el => typeof el === 'object' && el.tagName === 'html');
+
+	const html = result.find((el): el is TNode => typeof el === 'object' && el.tagName === 'html');
 	assert(html, 'should have html element');
 });
 
@@ -1014,36 +999,34 @@ test('getElementsByClassName with multiple classes', () => {
 		<span class="active">Item 3</span>
 		<span class="highlight primary active">Item 4</span>
 	</div>`;
-	
-	const highlighted = tXml.getElementsByClassName(html, 'highlight');
+
+	const highlighted = tXml.getElementsByClassName(html, 'highlight') as TNode[];
 	assert.strictEqual(highlighted.length, 3);
-	
-	const active = tXml.getElementsByClassName(html, 'active');
+
+	const active = tXml.getElementsByClassName(html, 'active') as TNode[];
 	assert.strictEqual(active.length, 3);
 });
 
 test('performance: getElementById vs getElementsByClassName', () => {
-	const largeDoc = '<root>' + 
-		Array.from({ length: 5000 }, (_, i) => 
+	const largeDoc = '<root>' +
+		Array.from({ length: 5000 }, (_, i) =>
 			`<item id="id${i}" class="item-class special-${i % 10}">Content ${i}</item>`
 		).join('') +
 		'</root>';
-	
-	// Test getElementById
+
 	const start1 = process.hrtime.bigint();
 	const byId = tXml.getElementById(largeDoc, 'id4999');
 	const end1 = process.hrtime.bigint();
 	const idTime = Number(end1 - start1) / 1000000;
-	
-	// Test getElementsByClassName
+
 	const start2 = process.hrtime.bigint();
 	const byClass = tXml.getElementsByClassName(largeDoc, 'special-9');
 	const end2 = process.hrtime.bigint();
 	const classTime = Number(end2 - start2) / 1000000;
-	
+
 	assert(byId, 'getElementById should find element');
-	assert(byClass.length > 0, 'getElementsByClassName should find elements');
-	
+	assert((byClass as TNode[]).length > 0, 'getElementsByClassName should find elements');
+
 	console.log(`\n  getElementById vs getElementsByClassName:`);
 	console.log(`    getElementById:        ${idTime.toFixed(2)}ms`);
 	console.log(`    getElementsByClassName: ${classTime.toFixed(2)}ms`);
@@ -1054,14 +1037,14 @@ test('parsing XML with various whitespace handling', () => {
 		<preserve xml:space="preserve">  text  with  spaces  </preserve>
 		<normal>  text  with  spaces  </normal>
 	</root>`;
-	
+
 	const result = tXml.parse(xml);
-	const preserve = result[0].children.find(el => typeof el === 'object' && el.tagName === 'preserve');
-	const normal = result[0].children.find(el => typeof el === 'object' && el.tagName === 'normal');
-	
+	const root = result[0] as TNode;
+	const preserve = root.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'preserve');
+	const normal = root.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'normal');
+
 	assert(preserve);
 	assert(normal);
-	// By default, whitespace is trimmed
 	assert.strictEqual(normal.children[0], 'text  with  spaces');
 });
 
@@ -1069,7 +1052,7 @@ test('toContentString with nested elements', () => {
 	const xml = '<article><title>The Title</title><p>First paragraph with <b>bold text</b> and <i>italic</i>.</p><p>Second paragraph.</p></article>';
 	const parsed = tXml.parse(xml);
 	const content = tXml.toContentString(parsed);
-	
+
 	assert(content.includes('The Title'));
 	assert(content.includes('First paragraph'));
 	assert(content.includes('bold text'));
@@ -1080,22 +1063,22 @@ test('toContentString with nested elements', () => {
 test('filter with depth parameter', () => {
 	const xml = '<root><level1><level2><level3>deep</level3></level2></level1></root>';
 	const parsed = tXml.parse(xml);
-	
+
 	let maxDepth = 0;
-	tXml.filter(parsed, (node, index, depth) => {
+	tXml.filter(parsed, (_node: TNode, _index: number, depth: number) => {
 		if (depth > maxDepth) maxDepth = depth;
 		return true;
 	});
-	
+
 	assert(maxDepth >= 3, `should have depth of at least 3, got ${maxDepth}`);
 });
 
 test('filter callback receives stable index depth and path values', () => {
 	const xml = '<root><a/><group><b/><c/></group><d/></root>';
 	const parsed = tXml.parse(xml);
-	const seen = [];
+	const seen: { tagName: string; index: number; depth: number; path: string }[] = [];
 
-	tXml.filter(parsed, (node, index, depth, path) => {
+	tXml.filter(parsed, (node: TNode, index: number, depth: number, path: string) => {
 		seen.push({ tagName: node.tagName, index, depth, path });
 		return false;
 	});
@@ -1113,13 +1096,13 @@ test('filter callback receives stable index depth and path values', () => {
 test('filter keeps preorder and original node identity', () => {
 	const xml = '<root><item id="1"/><group><item id="2"/></group><item id="3"/></root>';
 	const parsed = tXml.parse(xml);
-	const root = parsed[0];
-	const firstItem = root.children[0];
-	const group = root.children[1];
-	const secondItem = group.children[0];
-	const thirdItem = root.children[2];
+	const root = parsed[0] as TNode;
+	const firstItem = root.children[0] as TNode;
+	const group = root.children[1] as TNode;
+	const secondItem = group.children[0] as TNode;
+	const thirdItem = root.children[2] as TNode;
 
-	const items = tXml.filter(parsed, (node) => node.tagName === 'item');
+	const items = tXml.filter(parsed, (node: TNode) => node.tagName === 'item');
 
 	assert.strictEqual(items.length, 3);
 	assert.strictEqual(items[0], firstItem);
@@ -1130,9 +1113,9 @@ test('filter keeps preorder and original node identity', () => {
 test('filter respects explicit starting depth and path', () => {
 	const xml = '<root><child/></root>';
 	const parsed = tXml.parse(xml);
-	const seen = [];
+	const seen: { tagName: string; index: number; depth: number; path: string }[] = [];
 
-	tXml.filter(parsed, (node, index, depth, path) => {
+	tXml.filter(parsed, (node: TNode, index: number, depth: number, path: string) => {
 		seen.push({ tagName: node.tagName, index, depth, path });
 		return false;
 	}, 5, 'seed.path');
@@ -1146,8 +1129,8 @@ test('filter respects explicit starting depth and path', () => {
 test('simplify with arrays of similar elements', () => {
 	const xml = '<list><item>First</item><item>Second</item><item>Third</item></list>';
 	const parsed = tXml.parse(xml);
-	const simplified = tXml.simplify(parsed);
-	
+	const simplified = tXml.simplify(parsed) as Record<string, any>;
+
 	assert(simplified.list);
 	assert(Array.isArray(simplified.list.item));
 	assert.strictEqual(simplified.list.item.length, 3);
@@ -1160,27 +1143,30 @@ test('parsing with very long attribute values', () => {
 	const longValue = 'a'.repeat(10000);
 	const xml = `<element data="${longValue}"/>`;
 	const result = tXml.parse(xml);
-	
-	assert.strictEqual(result[0].attributes.data.length, 10000);
-	assert.strictEqual(result[0].attributes.data, longValue);
+	const el = result[0] as TNode;
+
+	assert.strictEqual(el.attributes.data!.length, 10000);
+	assert.strictEqual(el.attributes.data, longValue);
 });
 
 test('parsing with very long text content', () => {
 	const longText = 'Lorem ipsum '.repeat(1000);
 	const xml = `<element>${longText}</element>`;
 	const result = tXml.parse(xml);
-	
-	assert.strictEqual(result[0].children[0], longText.trim());
+	const el = result[0] as TNode;
+
+	assert.strictEqual(el.children[0], longText.trim());
 });
 
 test('empty attributes and null handling', () => {
 	const xml = '<element required disabled="" empty="" value="actual"/>';
 	const result = tXml.parse(xml);
-	
-	assert.strictEqual(result[0].attributes.required, null);
-	assert.strictEqual(result[0].attributes.disabled, '');
-	assert.strictEqual(result[0].attributes.empty, '');
-	assert.strictEqual(result[0].attributes.value, 'actual');
+	const el = result[0] as TNode;
+
+	assert.strictEqual(el.attributes.required, null);
+	assert.strictEqual(el.attributes.disabled, '');
+	assert.strictEqual(el.attributes.empty, '');
+	assert.strictEqual(el.attributes.value, 'actual');
 });
 
 test('complex real-world XML: Atom feed', () => {
@@ -1201,71 +1187,64 @@ test('complex real-world XML: Atom feed', () => {
 		<summary>Some text.</summary>
 	</entry>
 </feed>`;
-	
+
 	const result = tXml.parse(atom);
-	const feed = result.find(el => typeof el === 'object' && el.tagName === 'feed');
-	
+	const feed = result.find((el): el is TNode => typeof el === 'object' && el.tagName === 'feed');
+
 	assert(feed);
 	assert.strictEqual(feed.attributes.xmlns, 'http://www.w3.org/2005/Atom');
-	
-	const entry = feed.children.find(el => typeof el === 'object' && el.tagName === 'entry');
+
+	const entry = feed.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'entry');
 	assert(entry, 'should have entry element');
 });
 
 test('selfClosingTags option - link tag behavior', () => {
-	// By default, 'link' is in the selfClosingTags list (like img, br, etc.)
 	const html = '<head><link rel="stylesheet" href="style.css"><title>Test</title></head>';
 	const result = tXml.parse(html);
-	
-	const head = result[0];
+
+	const head = result[0] as TNode;
 	assert.strictEqual(head.tagName, 'head');
-	
-	// link should be self-closing
-	const linkTag = head.children.find(el => typeof el === 'object' && el.tagName === 'link');
+
+	const linkTag = head.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'link');
 	assert(linkTag, 'should have link element');
 	assert.strictEqual(linkTag.attributes.rel, 'stylesheet');
 	assert.deepStrictEqual(linkTag.children, []);
 });
 
 test('parsing with custom selfClosingTags option', () => {
-	// Test with empty selfClosingTags to allow link to have children
 	const xml = '<container><custom>content</custom></container>';
 	const result = tXml.parse(xml, { selfClosingTags: [] });
-	
-	const container = result[0];
+
+	const container = result[0] as TNode;
 	assert.strictEqual(container.tagName, 'container');
-	
-	const custom = container.children.find(el => typeof el === 'object' && el.tagName === 'custom');
+
+	const custom = container.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'custom');
 	assert(custom);
 	assert.strictEqual(custom.children[0], 'content');
 });
 
 test('backward compatibility - noChildNodes still works', () => {
-	// noChildNodes should still work for backward compatibility
 	const xml = '<container><custom>content</custom></container>';
 	const result = tXml.parse(xml, { noChildNodes: [] });
-	
-	const container = result[0];
+
+	const container = result[0] as TNode;
 	assert.strictEqual(container.tagName, 'container');
-	
-	const custom = container.children.find(el => typeof el === 'object' && el.tagName === 'custom');
+
+	const custom = container.children.find((el): el is TNode => typeof el === 'object' && el.tagName === 'custom');
 	assert(custom);
 	assert.strictEqual(custom.children[0], 'content');
 });
 
 test('isTextNode type guard', () => {
 	const xml = '<div>Hello <span>World</span>!</div>';
-	const [div] = tXml.parse(xml);
-	
-	// Test with text nodes
+	const [div] = tXml.parse(xml) as TNode[];
+
 	assert.strictEqual(tXml.isTextNode('Hello'), true);
 	assert.strictEqual(tXml.isTextNode(div.children[0]), true);
-	
-	// Test with element nodes
-	assert.strictEqual(tXml.isTextNode(div), false);
-	assert.strictEqual(tXml.isTextNode(div.children[1]), false);
-	
-	// Test filtering
+
+	assert.strictEqual(tXml.isTextNode(div as any), false);
+	assert.strictEqual(tXml.isTextNode(div.children[1] as any), false);
+
 	const textNodes = div.children.filter(tXml.isTextNode);
 	assert.strictEqual(textNodes.length, 2);
 	assert.strictEqual(textNodes[0], 'Hello');
@@ -1274,21 +1253,17 @@ test('isTextNode type guard', () => {
 
 test('isElementNode type guard', () => {
 	const xml = '<div>Hello <span>World</span>!</div>';
-	const [div] = tXml.parse(xml);
-	
-	// Test with element nodes
+	const [div] = tXml.parse(xml) as TNode[];
+
 	assert.strictEqual(tXml.isElementNode(div), true);
 	assert.strictEqual(tXml.isElementNode(div.children[1]), true);
-	
-	// Test with text nodes
+
 	assert.strictEqual(tXml.isElementNode('Hello'), false);
 	assert.strictEqual(tXml.isElementNode(div.children[0]), false);
-	
-	// Test with null/undefined
+
 	assert.strictEqual(tXml.isElementNode(null), false);
 	assert.strictEqual(tXml.isElementNode(undefined), false);
-	
-	// Test filtering
+
 	const elementNodes = div.children.filter(tXml.isElementNode);
 	assert.strictEqual(elementNodes.length, 1);
 	assert.strictEqual(elementNodes[0].tagName, 'span');
@@ -1296,12 +1271,11 @@ test('isElementNode type guard', () => {
 
 test('type guards usage in real scenario', () => {
 	const xml = '<article><title>Title</title>Text content<p>Paragraph</p>More text</article>';
-	const [article] = tXml.parse(xml);
-	
-	// Separate text and elements
+	const [article] = tXml.parse(xml) as TNode[];
+
 	const texts = article.children.filter(tXml.isTextNode);
 	const elements = article.children.filter(tXml.isElementNode);
-	
+
 	assert.strictEqual(texts.length, 2);
 	assert.strictEqual(elements.length, 2);
 	assert.strictEqual(texts[0], 'Text content');
@@ -1311,21 +1285,16 @@ test('type guards usage in real scenario', () => {
 });
 
 test('attribute values: null vs empty string vs value', () => {
-	// Test the three types of attribute values
 	const xml = '<input disabled required="" value="test" checked>';
-	const [input] = tXml.parse(xml);
-	
-	// Attribute without value (boolean attribute)
+	const [input] = tXml.parse(xml) as TNode[];
+
 	assert.strictEqual(input.attributes.disabled, null);
 	assert.strictEqual(input.attributes.checked, null);
-	
-	// Attribute with empty value
+
 	assert.strictEqual(input.attributes.required, '');
-	
-	// Attribute with value
+
 	assert.strictEqual(input.attributes.value, 'test');
-	
-	// Verify all are present
+
 	assert(Object.keys(input.attributes).includes('disabled'));
 	assert(Object.keys(input.attributes).includes('required'));
 	assert(Object.keys(input.attributes).includes('value'));

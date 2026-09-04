@@ -6,9 +6,9 @@
     "main": "dist/index.cjs",
     "module": "dist/index.mjs",
     "scripts": {
-        "build": "rollup -c && npm run types:copy",
-        "types:copy": "cp src/*.d.ts dist/",
-        "test": "node --test test/test-*.js",
+        "build": "rollup -c",
+        "typecheck": "tsc --noEmit -p tsconfig.json",
+        "test": "tsx --test test/*.test.ts",
         "prepublishOnly": "npm run build && npm test"
     },
     "files": [
@@ -65,8 +65,12 @@
     "types": "dist/index.d.ts",
     "homepage": "https://github.com/TobiasNickel/tXml#readme",
     "devDependencies": {
-        "rollup": "^4.24.0",
         "@rollup/plugin-terser": "^0.4.4",
-        "typescript": "^5.6.0"
+        "@rollup/plugin-typescript": "^12.3.0",
+        "@types/node": "^26.4.1",
+        "rollup": "^4.63.1",
+        "tslib": "^2.8.1",
+        "tsx": "^4.23.13",
+        "typescript": "^5.9.3"
     }
 }
