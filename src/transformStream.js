@@ -78,6 +78,7 @@ export function transformStream(offset, parseOptions) {
 
     let position = offset || 0;
     let data = '';
+    const nodeOptions = { ...parseOptions, parseNode: true, setPos: true };
 
     const stream = new Transform({
         objectMode: true,
@@ -134,12 +135,8 @@ export function transformStream(offset, parseOptions) {
                     continue;
                 }
 
-                const res = parse(data, {
-                    ...parseOptions,
-                    pos: position - 1,
-                    parseNode: true,
-                    setPos: true
-                });
+                nodeOptions.pos = position - 1;
+                const res = parse(data, nodeOptions);
 
                 // When setPos is true, parse returns an object with pos property
                 // @ts-ignore - res has pos property when setPos option is true
@@ -177,6 +174,7 @@ export function transformWebStream(offset, parseOptions) {
 
     let position = offset || 0;
     let data = '';
+    const nodeOptions = { ...parseOptions, parseNode: true, setPos: true };
 
     return new TransformStream({
         /**
@@ -228,12 +226,8 @@ export function transformWebStream(offset, parseOptions) {
                     continue;
                 }
 
-                const res = parse(data, {
-                    ...parseOptions,
-                    pos: position - 1,
-                    parseNode: true,
-                    setPos: true
-                });
+                nodeOptions.pos = position - 1;
+                const res = parse(data, nodeOptions);
 
                 // When setPos is true, parse returns an object with pos property
                 // @ts-ignore - res has pos property when setPos option is true
