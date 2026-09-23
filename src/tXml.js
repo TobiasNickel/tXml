@@ -40,10 +40,9 @@ function decodeEntities(value) {
  * @returns {string}
  */
 function encodeTextEntities(value) {
-    return value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    return value.replace(/[&<>]/g, function(ch) {
+        return ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : '&gt;';
+    });
 }
 
 /**
@@ -52,12 +51,15 @@ function encodeTextEntities(value) {
  * @returns {string}
  */
 function encodeAttributeEntities(value) {
-    return value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
+    return value.replace(/[&<>"']/g, function(ch) {
+        switch (ch) {
+            case '&': return '&amp;';
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+            default: return '&apos;';
+        }
+    });
 }
 
 /**
@@ -90,6 +92,13 @@ export function parse(S, options) {
     var openCornerBracketCC = '['.charCodeAt(0);
     var closeCornerBracketCC = ']'.charCodeAt(0);
     var questionCC = '?'.charCodeAt(0);
+    var len = S.length;
+
+    // Fast check for characters that terminate a tag/attribute name:
+    // space, \t, \n, \r, '>', '/', '=' (same set as the old nameSpacer string).
+    function isNameTerminatorCC(cc) {
+        return cc === 32 || cc === 9 || cc === 10 || cc === 13 || cc === 62 || cc === 47 || cc === 61;
+    }
 
     function isXmlDeclarationTag(tagName) {
         return typeof tagName === 'string' && tagName.toLowerCase() === '?xml';
@@ -124,27 +133,32 @@ export function parse(S, options) {
                     return children;
                 } else if (S.charCodeAt(pos + 1) === exclamationCC) {
                     if (S.charCodeAt(pos + 2) == minusCC) {
-                        //comment support
+                        //comment support: jump straight to the comment end
                         const startCommentPos = pos;
-                        while (pos !== -1 && !(S.charCodeAt(pos) === closeBracketCC && S.charCodeAt(pos - 1) == minusCC && S.charCodeAt(pos - 2) == minusCC && pos != -1)) {
-                            pos = S.indexOf(closeBracket, pos + 1);
+                        var commentEnd = S.indexOf('-->', pos + 2);
+                        if (commentEnd === -1) {
+                            if (keepComments) {
+                                children.push(S.substring(startCommentPos));
+                            }
+                            pos = len;
+                        } else {
+                            if (keepComments) {
+                                children.push(S.substring(startCommentPos, commentEnd + 3));
+                            }
+                            pos = commentEnd + 3;
                         }
-                        if (pos === -1) {
-                            pos = S.length
-                        }
-                        if (keepComments) {
-                            children.push(S.substring(startCommentPos, pos + 1));
-                        }
+                        continue;
                     } else if (
                         S.charCodeAt(pos + 2) === openCornerBracketCC &&
                         S.charCodeAt(pos + 8) === openCornerBracketCC &&
-                        S.substr(pos + 3, 5).toLowerCase() === 'cdata'
+                        (S.substring(pos + 3, pos + 8) === 'CDATA' ||
+                            S.substring(pos + 3, pos + 8).toLowerCase() === 'cdata')
                     ) {
                         // cdata
                         var cdataEndIndex = S.indexOf(']]>', pos);
                         if (cdataEndIndex == -1) {
-                            children.push(S.substr(pos + 9));
-                            pos = S.length;
+                            children.push(S.substring(pos + 9));
+                            pos = len;
                         } else {
                             children.push(S.substring(pos + 9, cdataEndIndex));
                             pos = cdataEndIndex + 3;
@@ -207,11 +221,9 @@ export function parse(S, options) {
      *    returns text until the first nonAlphabetic letter
      * @returns {string}
      */
-    var nameSpacer = '\r\n\t>/= ';
-
     function parseName() {
         var start = pos;
-        while (nameSpacer.indexOf(S[pos]) === -1 && S[pos]) {
+        while (pos < len && !isNameTerminatorCC(S.charCodeAt(pos))) {
             pos++;
         }
         return S.slice(start, pos);
@@ -262,7 +274,7 @@ export function parse(S, options) {
                     var code = S.charCodeAt(pos);
                     if (code === singleQuoteCC || code === doubleQuoteCC) {
                         value = parseString();
-                        if (pos === -1) {
+                        if (pos >= len) {
                             return {
                                 tagName,
                                 attributes,
@@ -272,7 +284,7 @@ export function parse(S, options) {
                     } else if (code && code !== closeBracketCC) {
                         // HTML-style unquoted attribute value: read until whitespace, '/', or '>'.
                         var valueStart = pos;
-                        while (S[pos] && nameSpacer.indexOf(S[pos]) === -1) {
+                        while (pos < len && !isNameTerminatorCC(S.charCodeAt(pos))) {
                             pos++;
                         }
                         value = S.slice(valueStart, pos);
@@ -356,24 +368,18 @@ export function parse(S, options) {
     function parseString() {
         var startChar = S[pos];
         var startpos = pos + 1;
-        pos = S.indexOf(startChar, startpos);
-        var value = S.slice(startpos, pos);
+        var endQuote = S.indexOf(startChar, startpos);
+        if (endQuote === -1) {
+            // Unterminated attribute value: consume to end of input.
+            pos = len;
+            var restValue = S.slice(startpos);
+            return decodeEntitiesEnabled ? decodeEntities(restValue) : restValue;
+        }
+        pos = endQuote;
+        var value = S.slice(startpos, endQuote);
         return decodeEntitiesEnabled ? decodeEntities(value) : value;
     }
 
-    /**
-     * Find elements by attribute name and value using regex
-     * @returns {number}
-     */
-    function findElements() {
-        if (!options || !options.attrName || !options.attrValue) return -1;
-        var r = new RegExp('\\s' + options.attrName + '\\s*=[\'"]' + options.attrValue + '[\'"]').exec(S)
-        if (r) {
-            return r.index;
-        } else {
-            return -1;
-        }
-    }
 
     /** @type {(import('./tXml').TNode | string)[] | import('./tXml').TNode} */
     var out;
@@ -382,14 +388,26 @@ export function parse(S, options) {
         options.attrName = options.attrName || 'id';
         out = [];
 
-        while ((pos = findElements()) !== -1) {
-            pos = S.lastIndexOf('<', pos);
+        // Compile the search pattern once and scan forward through S without
+        // copying the remaining string on every hit O(n)
+        var attrPattern = new RegExp('\\s' + options.attrName + '\\s*=[\'"]' + options.attrValue + '[\'"]', 'g');
+        var attrMatch;
+        while ((attrMatch = attrPattern.exec(S)) !== null) {
+            pos = S.lastIndexOf('<', attrMatch.index);
             if (pos !== -1) {
                 out.push(parseNode());
+                if (pos <= attrMatch.index) {
+                    // parseNode did not advance past the match (malformed
+                    // input): move forward to guarantee progress.
+                    pos = attrMatch.index + 1;
+                }
+                attrPattern.lastIndex = pos;
+            } else {
+                pos = attrMatch.index + 1;
+                attrPattern.lastIndex = pos;
             }
-            S = S.substr(pos);
-            pos = 0;
         }
+        pos = len;
     } else if (options.parseNode) {
         out = parseNode();
         while (skipXmlDeclaration && typeof out === 'object' && out && isXmlDeclarationTag(out.tagName)) {
@@ -521,6 +539,11 @@ export function simplifyLostLess(children, parentAttributes = {}) {
 export function filter(children, f, dept = 0, path = '') {
     /** @type {import('./tXml').TNode[]} */
     var out = [];
+    // Most filter callbacks only inspect the node (or node + index). Building
+    // the dotted path string for every node is wasted work in that case, so
+    // only build it when the callback declares that parameter. A zero-arity
+    // function may still read `arguments`, so keep building paths for those.
+    var needsPath = f.length === 0 || f.length >= 4;
 
     /**
      * @param {(import('./tXml').TNode | string)[]} nodes
@@ -536,12 +559,16 @@ export function filter(children, f, dept = 0, path = '') {
             }
 
             if (child.children) {
-                walk(child.children, depth + 1, (currentPath ? currentPath + '.' : '') + i + '.' + child.tagName);
+                walk(
+                    child.children,
+                    depth + 1,
+                    needsPath ? (currentPath ? currentPath + '.' : '') + i + '.' + child.tagName : ''
+                );
             }
         });
     }
 
-    walk(children, dept, path);
+    walk(children, dept, needsPath ? path : '');
     return out;
 }
 
@@ -664,12 +691,12 @@ export function stringify(O, options) {
  */
 export function toContentString(tDom) {
     if (Array.isArray(tDom)) {
-        var out = '';
-        tDom.forEach(function(e) {
-            out += ' ' + toContentString(e);
-            out = out.trim();
-        });
-        return out;
+        // Join parts first and trim once: O(n)
+        var parts = new Array(tDom.length);
+        for (var i = 0; i < tDom.length; i++) {
+            parts[i] = ' ' + toContentString(tDom[i]);
+        }
+        return parts.join('').trim();
     } else if (typeof tDom === 'object' && tDom !== null) {
         return toContentString(tDom.children)
     } else {
