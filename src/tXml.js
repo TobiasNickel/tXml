@@ -314,11 +314,15 @@ export function parse(S, options) {
             if (tagName == "script") {
                 var start = pos + 1;
                 pos = S.indexOf('</script>', pos);
+                // unclosed: the rest of the input is its content
+                if (pos === -1) pos = S.length;
                 children = [S.slice(start, pos)];
                 pos += 9;
             } else if (tagName == "style") {
                 var start = pos + 1;
                 pos = S.indexOf('</style>', pos);
+                // unclosed: the rest of the input is its content
+                if (pos === -1) pos = S.length;
                 children = [S.slice(start, pos)];
                 pos += 8;
             } else if (SelfClosingTags.indexOf(tagName) === -1) {

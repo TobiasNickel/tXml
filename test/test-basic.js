@@ -168,6 +168,22 @@ test('JavaScript creating tags in script', () => {
 	);
 });
 
+test('unclosed script and style', () => {
+	for (const tagName of ['script', 'style']) {
+		const node = (content) => ({ tagName, attributes: {}, children: [content] });
+		assert.deepStrictEqual(tXml.parse(`<${tagName}>a < b`), [node('a < b')]);
+		assert.deepStrictEqual(tXml.parse(`<${tagName}`), [node('')]);
+		assert.deepStrictEqual(
+			tXml.parse(`<p><b></b><${tagName}>c`),
+			[{
+				tagName: 'p',
+				attributes: {},
+				children: [{ tagName: 'b', attributes: {}, children: [] }, node('c')]
+			}]
+		);
+	}
+});
+
 test('stringify keeps optimal XML the same', () => {
 	const x = '<test a="value"><child a=\'g"g\'>text</child></test>';
 	assert.strictEqual(tXml.stringify(tXml.parse(x)), x);
